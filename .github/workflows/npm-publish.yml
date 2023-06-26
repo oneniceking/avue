@@ -3,9 +3,15 @@
 
 name: NPM_PUBLISH
 
+# on:
+#  release:
+#   types: [created]
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+      - "releases/**"
+      - dev
 
 jobs:
   build:
