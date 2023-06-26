@@ -1,136 +1,168 @@
 <template>
-  <el-card :shadow="crud.isCard"
-           :class="b()"
-           v-if="searchFlag"
-           v-show="searchShow && searchFlag">
-    <slot name="search"
-          :row="searchForm"
-          :search="searchForm"
-          :size="crud.controlSize"></slot>
-    <avue-form :option="option"
-               ref="form"
-               @submit="searchChange"
-               @reset-change="resetChange"
-               v-model="searchForm">
-      <template slot="menuForm"
-                slot-scope="scope">
-        <slot name="searchMenu"
-              v-bind="Object.assign(scope,{
+  <el-collapse-transition>
+    <el-card :shadow="crud.isCard"
+             :class="b()"
+             v-show="searchShow && searchFlag">
+      <avue-form :option="option"
+                 ref="form"
+                 @submit="searchChange"
+                 @reset-change="resetChange"
+                 v-model="searchForm">
+        <template slot="menuForm"
+                  slot-scope="scope">
+          <slot name="searchMenu"
+                v-bind="Object.assign(scope,{
                   search:searchForm,
                   row:searchForm
                 })"></slot>
-        <template v-if="isSearchIcon">
-          <el-button type="text"
-                     v-if="show===false"
-                     @click="show=true"
-                     icon="el-icon-arrow-down">{{t('crud.open')}}</el-button>
-          <el-button type="text"
-                     v-if="show===true"
-                     @click="show=false"
-                     icon="el-icon-arrow-up">{{t('crud.shrink')}}</el-button>
-        </template>
+          <template v-if="isSearchIcon">
+            <el-button type="text"
+                       v-if="show===false"
+                       @click="show=true"
+                       icon="el-icon-arrow-down">展 开</el-button>
+            <el-button type="text"
+                       v-if="show===true"
+                       @click="show=false"
+                       icon="el-icon-arrow-up">收 缩</el-button>
+          </template>
 
-      </template>
-      <template slot-scope="scope"
-                v-for="item in crud.searchSlot"
-                :slot="getSlotName(item)">
-        <slot :name="item"
-              v-bind="Object.assign(scope,{
+        </template>
+        <template slot-scope="scope"
+                  v-for="item in crud.searchSlot"
+                  :slot="item.prop">
+          <slot :name="item.prop"
+                v-bind="Object.assign(scope,{
                   search:searchForm,
                   row:searchForm
                 })"></slot>
-      </template>
-    </avue-form>
-  </el-card>
+        </template>
+        <template slot="search"
+                  slot-scope="{}">
+          <slot name="search"
+                :row="searchForm"
+                :search="searchForm"
+                :size="crud.controlSize"></slot>
+        </template>
+      </avue-form>
+    </el-card>
+  </el-collapse-transition>
 </template>
 
 <script>
-import create from "core/create";
+import cteate from "core/create";
+import { vaildData } from "utils/util";
+import { validatenull } from "utils/validate";
+import locale from "../../core/common/locale";
 import slot from 'core/slot'
+import {
+  formInitVal,
+  getSearchType,
+  getType,
+  getPlaceholder
+} from "core/dataformat";
 import config from "./config";
-import locale from "core/locale";
-import { getSearchType } from "core/dataformat";
-import { filterParams } from 'utils/util'
-export default create({
+export default cteate({
   name: "crud__search",
   inject: ["crud"],
   mixins: [locale, slot],
   data () {
     return {
       show: false,
-      searchIndex: 2,
+      flag: false,
+      reload: false,
+      config: config,
+      defaultForm: {
+        searchForm: {}
+      },
       searchShow: true,
+      searchForm: {}
     };
   },
   props: {
-    search: Object
+    search: {
+      type: Object,
+      default: () => {
+        return {}
+      }
+    }
   },
   watch: {
     'crud.propOption': {
       handler () {
-        this.dataFormat()
+        this.dataformat();
+      },
+      immediate: true
+    },
+    search: {
+      handler () {
+        this.searchInit();
+      },
+      deep: true,
+    },
+    searchForm: {
+      handler () {
+        this.$emit("input", this.searchForm);
+        this.updateValue();
       },
       deep: true
-    },
-    show () {
-      this.crud.getTableHeight()
-    },
-    searchShow () {
-      this.crud.getTableHeight()
-    },
+    }
   },
   created () {
-    this.initFun();
-    this.dataFormat()
+    this.init();
+    this.searchInit();
   },
   computed: {
-    searchForm: {
-      get () {
-        return this.crud.search
-      },
-      set (val) {
-        this.crud.$emit('update:search', val)
-      }
+    isSearchIcon () {
+      return this.crud.option.searchIcon === true && this.columnLen > this.searchIndex
+    },
+    searchIndex () {
+      return this.crud.option.searchIndex || 2
+    },
+    columnLen () {
+      let count = 0;
+      this.crud.propOption.forEach(ele => {
+        if (ele.search) count++
+      })
+      return count
     },
     option () {
       const option = this.crud.option;
-      this.searchIndex = option.searchIndex || 2
       const detailColumn = (list = []) => {
-        list = this.deepClone(list);
         let column = [];
         let count = 0;
-        list = list.sort((a, b) => (b.searchOrder || 0) - (a.searchOrder || 0))
+        //根据order排序
         list.forEach(ele => {
           if (ele.search) {
             let isCount = count < this.searchIndex
-            let obj = {}
-            Object.keys(ele).forEach(item => {
-              let key = 'search'
-              if (item == 'searchProp') return
-              if (item.includes(key)) {
-                let result = item.replace(key, '')
-                if (result.length == 0) return
-                result = result.replace(result[0], result[0].toLowerCase())
-                obj[result] = ele[item];
-              }
-            })
-            ele = Object.assign(ele, obj, {
+            ele = Object.assign(ele, {
               type: getSearchType(ele),
+              multiple: ele.searchMultiple,
+              order: ele.searchOrder,
               detail: false,
-              dicFlag: ele.cascader ? true : this.vaildData(ele.dicFlag, false),
-              span: ele.searchSpan || option.searchSpan || config.searchSpan,
-              control: ele.searchControl,
-              gutter: ele.searchGutter || option.searchGutter || config.searchGutter,
-              labelWidth: ele.searchLabelWidth || option.searchLabelWidth || config.searchLabelWidth,
+              dicFlag: false,
+              span: ele.searchSpan || option.searchSpan || this.config.searchSpan,
+              gutter: ele.searchGutter || option.searchGutter || this.config.searchGutter,
+              labelWidth: ele.searchLabelWidth || option.searchLabelWidth || this.config.searchLabelWidth,
               labelPosition: ele.searchLabelPosition || option.searchLabelPosition,
-              size: ele.searchSize || option.searchSize,
-              value: ele.searchValue,
-              rules: ele.searchRules,
+              tip: ele.searchTip,
+              placeholder: getPlaceholder(ele, 'search'),
+              filterable: ele.searchFilterable,
+              tipPlacement: ele.searchTipPlacement,
+              filterMethod: ele.searchFilterMethod,
+              checkStrictly: ele.searchCheckStrictly || option.searchCheckStrictly,
+              tags: ele.searchTags,
               row: ele.searchRow,
-              bind: ele.searchBin,
+              size: ele.searchSize || option.searchSize || this.crud.controlSize,
+              clearable: ele.searchClearable,
+              rules: ele.searchRules,
               disabled: ele.searchDisabled,
               readonly: ele.searchReadonly,
+              value: ele.searchValue,
               display: this.isSearchIcon ? (this.show ? true : isCount) : true,
+            })
+            let whiteList = ['disabled', 'readonly']
+            whiteList.forEach(key => {
+              delete ele[key]
             })
             column.push(ele);
             count = count + 1;
@@ -138,31 +170,30 @@ export default create({
         })
         return column;
       }
-      const detailOption = (list) => {
+      const dataDetail = (list) => {
         let result = this.deepClone(list);
-        result.column = detailColumn(this.crud.propOption)
+        result.translate = false;
+        if (result.group) {
+          delete result.group;
+        }
+        result.column = detailColumn(this.deepClone(this.crud.columnFormOption))
         result = Object.assign(result, {
-          rowKey: option.searchRowKey || 'null',
           tabs: false,
-          group: false,
+          enter: this.vaildData(option.searchEnter, true),
           printBtn: false,
           mockBtn: false,
-          filterDic: option.searchFilterDic,
-          filterNull: option.searchFilterNull,
-          filterParam: option.searchFilterParam,
-          enter: option.searchEnter,
           size: option.searchSize,
-          submitText: option.searchBtnText || this.t('crud.searchBtn'),
-          submitBtn: this.vaildData(option.searchBtn, config.searchSubBtn),
-          submitIcon: this.crud.getBtnIcon('searchBtn'),
-          emptyText: option.emptyBtnText || this.t('crud.emptyBtn'),
-          emptyBtn: this.vaildData(option.emptyBtn, config.emptyBtn),
-          emptyIcon: this.crud.getBtnIcon('emptyBtn'),
+          submitText: this.vaildData(option.searchBtnText, this.t('crud.searchBtn')),
+          submitBtn: this.vaildData(option.searchBtn, this.config.searchSubBtn),
+          submitIcon: option.searchBtnIcon || this.config.searchBtnIcon,
+          emptyText: this.vaildData(option.emptyBtnText, this.t('crud.emptyBtn')),
+          emptyBtn: this.vaildData(option.emptyBtn, this.config.emptyBtn),
+          emptyIcon: option.emptyBtnIcon || this.config.emptyBtnIcon,
           menuSpan: (() => {
             if (this.show || !this.isSearchIcon) {
               return option.searchMenuSpan
             } else {
-              return option.searchMenuSpan < 6 ? option.searchMenuSpan : 6
+              return 6
             }
           })(),
           menuPosition: option.searchMenuPosition || 'center',
@@ -171,43 +202,33 @@ export default create({
         })
         return result;
       }
-      return detailOption(option)
-    },
-    isSearchIcon () {
-      return this.vaildData(this.crud.option.searchIcon, this.$AVUE.searchIcon) && this.searchLen > this.searchIndex
-    },
-    searchLen () {
-      let count = 0;
-      this.crud.propOption.forEach(ele => {
-        if (ele.search) count++
-      })
-      return count
+      let result = dataDetail(option)
+      return result;
     },
     searchFlag () {
-      return !!this.crud.$scopedSlots.search || this.searchLen !== 0
+      return !validatenull(this.searchForm);
     }
   },
   methods: {
-    initFun () {
-      ['searchReset', 'searchChange'].forEach(ele => this.crud[ele] = this[ele])
+    searchInit () {
+      this.searchForm = Object.assign(this.searchForm, this.search);
     },
-    getSlotName (item) {
-      return item.replace('Search', '')
+    updateValue () {
+      this.crud.$emit('update:search', this.searchForm)
+    },
+    //初始化
+    init () {
+      //扩展搜索的相关api
+      this.crud.searchChange = this.searchChange;
+      this.crud.searchReset = this.searchReset;
     },
     // 搜索回调
     searchChange (form, done) {
-      form = filterParams(form);
-      this.crud.propOption.forEach(ele => {
-        if (ele.searchProp) {
-          form[ele.searchProp] = form[ele.prop]
-          delete form[ele.prop]
-        }
-      })
       this.crud.$emit("search-change", form, done);
     },
     // 搜索清空
     resetChange () {
-      this.crud.$emit("search-reset", this.searchForm);
+      this.crud.$emit("search-reset", this.defaultForm.tableForm);
     },
     // 搜索清空
     searchReset () {
@@ -216,9 +237,13 @@ export default create({
     handleSearchShow () {
       this.searchShow = !this.searchShow;
     },
-    dataFormat () {
-      const option = this.crud.option;
-      this.searchShow = this.vaildData(option.searchShow, config.searchShow);
+    dataformat () {
+      this.defaultForm = formInitVal(this.option.column);
+      this.searchForm = this.deepClone(this.defaultForm.tableForm);
+      this.searchShow = vaildData(
+        this.crud.tableOption.searchShow,
+        this.crud.config.searchShow
+      );
     }
   }
 });

@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -28,76 +28,60 @@
     el: '#app',
     data() {
       return {
-        data: {
-          number: 1,
-        },
+        data: {},
         option: {
           props: {
             label: 'name',
             value: 'code'
           },
-          column: [{
-            prop: 'number',
-            type: 'radio',
-            dataType: 'number',
-            props: {
-              label: 'label',
-              value: 'value'
+          column: [
+            {
+              label: '省份',
+              prop: 'province',
+              type: 'select',
+              cascaderItem: ['city', 'area'],
+              dicUrl: `${baseUrl}/getProvince`,
+              dicData: 'province',
+              rules: [
+                {
+                  required: true,
+                  message: '请选择省份',
+                  trigger: 'blur'
+                }
+              ]
             },
-            dicData: [{
-              label: "1",
-              value: '1'
-            }, {
-              label: "2",
-              value: '2'
-            }, {
-              label: "3",
-              value: '3'
-            }],
-          },
-          {
-            label: '省份',
-            prop: 'province',
-            type: 'select',
-            cascader: ['city'],
-            dicUrl: `${baseUrl}/getProvince`,
-            rules: [
-              {
-                required: true,
-                message: '请选择省份',
-                trigger: 'blur'
-              }
-            ]
-          },
-          {
-            label: '城市',
-            prop: 'city',
-            type: 'select',
-            cascader: ['area'],
-            hide: true,
-            dicUrl: `${baseUrl}/getCity/{{key}}`,
-            rules: [
-              {
-                required: true,
-                message: '请选择城市',
-                trigger: 'blur'
-              }
-            ]
-          },
-          {
-            label: '地区',
-            prop: 'area',
-            hide: true,
-            type: 'select',
-            dicUrl: `${baseUrl}/getArea/{{key}}`,
-            rules: [
-              {
-                required: true,
-                message: '请选择地区',
-                trigger: 'blur'
-              }
-            ]
-          }
+            {
+              label: '城市',
+              prop: 'city',
+              type: 'select',
+              dicFlag: false,
+              hide: true,
+              dicUrl: `${baseUrl}/getCity/{{key}}`,
+              dicData: 'city',
+              rules: [
+                {
+                  required: true,
+                  message: '请选择城市',
+                  trigger: 'blur'
+                }
+              ]
+            },
+            {
+              label: '地区',
+              prop: 'area',
+              dicFlag: false,
+              hide: true,
+              type: 'select',
+              dicUrl: `${baseUrl}/getArea/{{key}}`,
+              dicData: 'area',
+              rules: [
+                {
+                  required: true,
+                  message: '请选择地区',
+                  trigger: 'blur'
+                }
+              ]
+            }
           ]
         }
       }

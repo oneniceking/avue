@@ -9,14 +9,14 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
   <script src="https://www.avuejs.com/cdn/aliyun-oss-sdk.min.js"></script>
   <!-- 导入表格需要的包 -->
 
   <script src="https://cdn.staticfile.org/FileSaver.js/2014-11-29/FileSaver.min.js"></script>
-  <script src="https://cdn.staticfile.org/xlsx/0.18.2/xlsx.full.min.js"></script>
+  <script src="https://cdn.staticfile.org/xlsx/0.14.1/xlsx.full.min.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -39,7 +39,6 @@
           pageSize: 20
         },
         option: {
-          excelBtn: true,
           border: true,
           index: true,
           expandLevel: 3,
@@ -66,10 +65,8 @@
             }]
           }, {
             label: '复杂表头',
-            prop: 'header',
             children: [{
               label: '信息',
-              prop: "info",
               children: [{
                 label: '年龄',
                 prop: 'age'
@@ -78,7 +75,6 @@
                 prop: 'phone',
               }, {
                 label: '单位：天',
-                prop: 'day',
                 children: [
                   {
                     label: 'D1-D3天数', children: [{

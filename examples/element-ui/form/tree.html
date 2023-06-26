@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -31,9 +31,8 @@
     data() {
       return {
         data: {
-          shenfeng: [0, 4, 32, 19, 8, 9, 10, 11],
-          shenfeng1: 32,
-          id: "110101,110102,120000"
+          shenfeng: [8, 9, 10],
+          shenfeng1: 32
         },
         option: {
           column: [{
@@ -1101,51 +1100,6 @@
               message: "请选择单选",
               trigger: "change"
             }]
-          }, {
-            label: '懒加载',
-            prop: 'id',
-            multiple: true,
-            type: 'tree',
-            props: {
-              label: 'name',
-              value: 'code'
-            },
-            dicUrl: `${baseUrl}/getProvince?id={{key}}`,
-            lazy: true,
-            treeLoad: (node, resolve) => {
-              let stop_level = 2;
-              let level = node.level;
-              let data = node.data || {}
-              let code = data.code;
-              let list = [];
-              let callback = () => {
-                resolve((list || []).map(ele => {
-                  return Object.assign(ele, {
-                    leaf: level >= stop_level
-                  })
-                }));
-              }
-              console.log(code);
-              if (level == 0) {
-                axios.get(`${baseUrl}/getProvince`).then(res => {
-                  list = res.data;
-                  callback()
-                })
-              } else if (level == 1) {
-                axios.get(`${baseUrl}/getCity/${code}`).then(res => {
-                  list = res.data;
-                  callback()
-                })
-              } else if (level == 2) {
-                axios.get(`${baseUrl}/getArea/${code}`).then(res => {
-                  list = res.data;
-                  callback()
-                })
-              } else {
-                list = []
-                callback()
-              }
-            }
           }]
         }
       }

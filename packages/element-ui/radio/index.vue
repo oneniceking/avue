@@ -2,6 +2,7 @@
   <div :class="b()">
     <el-radio-group v-model="text"
                     :size="size"
+                    @change="handleChange"
                     @click.native="handleClick"
                     :disabled="disabled">
       <component :is="componentName"
@@ -17,8 +18,8 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "radio",
   mixins: [props(), event()],

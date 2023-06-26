@@ -1,7 +1,7 @@
 <template>
   <el-input :class="b()"
             :size="size"
-            :clearable="clearableVal"
+            :clearable="disabled?false:clearable"
             v-model="text"
             @keyup.enter="isSearch?appendClick():''"
             @click.native="handleClick"
@@ -9,7 +9,6 @@
             :maxlength="maxlength"
             :minlength="minlength"
             :show-password="typeParam=='password'?showPassword:false"
-            :rows="rows"
             :autosize="{ minRows: minRows, maxRows: maxRows}"
             :prefix-icon="prefixIcon"
             :suffix-icon="suffixIcon"
@@ -34,13 +33,19 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 import { validatenull } from "utils/validate";
 export default create({
   name: "input",
   mixins: [props(), event()],
+  data () {
+    return {
+
+    };
+  },
   props: {
+    value: {},
     maxlength: "",
     minlength: "",
     showPassword: {
@@ -81,7 +86,6 @@ export default create({
     maxlength: {
       type: Number
     },
-    rows: Number,
     minRows: {
       type: Number,
       default: 5

@@ -8,8 +8,8 @@
               :key="index">
         <div class="item"
              :style="{background:item.color}">
-          <a :href="item.href"
-             @click="item.click&&item.click(item)"
+          <a :href="item.href?item.href:'javascript:void(0);'"
+             @click="item.click?item.click(item):''"
              :target="item.target">
             <div class="item-header">
               <p>{{item.title}}</p>
@@ -17,8 +17,8 @@
             </div>
             <div class="item-body">
               <avue-count-up class="h2"
-                             :decimals="item.decimals || decimals"
-                             :animation="item.animation || animation"
+                             :decimals="decimals"
+                             :animation="animation"
                              :end="item.count"></avue-count-up>
             </div>
             <div class="item-footer">

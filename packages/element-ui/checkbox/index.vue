@@ -1,11 +1,11 @@
 <template>
   <div :class="b()">
-    <el-checkbox v-if="all"
-                 :class="b('all')"
-                 :disabled="disabled"
-                 :indeterminate="isIndeterminate"
-                 v-model="checkAll"
-                 @change="handleCheckAll">{{t('check.checkAll')}}</el-checkbox>
+    <template v-if="all">
+      <el-checkbox :indeterminate="isIndeterminate"
+                   v-model="checkAll"
+                   @change="handleCheckAll">全选</el-checkbox>
+      <div style="margin: 5px 0;"></div>
+    </template>
     <el-checkbox-group v-model="text"
                        @change="handleCheckChange"
                        :disabled="disabled"
@@ -27,10 +27,9 @@
 </template>
 
 <script>
-import locale from "core/locale";
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "checkbox",
   props: {
@@ -39,7 +38,7 @@ export default create({
       default: false
     }
   },
-  mixins: [props(), event(), locale],
+  mixins: [props(), event()],
   data () {
     return {
       checkAll: false,
@@ -49,12 +48,14 @@ export default create({
   },
   watch: {
     dic () {
-      this.handleCheckChange();
+      this.handleCheckChange(this.text);
     },
     text: {
       handler (val) {
-        this.handleCheckChange();
-      }
+        this.handleChange(val)
+        this.handleCheckChange(val);
+      },
+      immediate: true
     },
   },
   created () { },
@@ -65,10 +66,10 @@ export default create({
       this.text = val ? this.dic.map(ele => ele[this.valueKey]) : [];
       this.isIndeterminate = false;
     },
-    handleCheckChange () {
-      let value = this.text;
+    handleCheckChange (value = []) {
       if (!this.all) return
       let checkedCount = value.length;
+      if (checkedCount === 0) return
       let dicLen = this.dic.length;
       this.checkAll = checkedCount === dicLen;
       this.isIndeterminate = checkedCount > 0 && checkedCount < dicLen

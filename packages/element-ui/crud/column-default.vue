@@ -3,34 +3,45 @@
     <el-table-column width="1px"></el-table-column>
     <!-- 折叠面板  -->
     <el-table-column type="expand"
-                     key="expand"
-                     :width="crud.tableOption.expandWidth || config.expandWidth"
-                     :fixed="vaildData(crud.tableOption.expandFixed,config.expandFixed)"
+                     :width="tableOption.expandWidth || config.expandWidth"
+                     :fixed="vaildData(tableOption.expandFixed,config.expandFixed)"
                      align="center"
-                     v-if="crud.tableOption.expand">
+                     v-if="tableOption.expand">
       <template slot-scope="{row}">
         <slot :row="row"
               :index="row.$index"
               name="expand"></slot>
       </template>
     </el-table-column>
-
+    <!-- 拖动排序  -->
+    <el-table-column v-if="tableOption.sortable && tableOption.dragHandler"
+                     :width="tableOption.sortableWidth || config.sortableWidth"
+                     :fixed="vaildData(tableOption.sortableFixed,config.sortableFixed)"
+                     align="center">
+      <template slot="header"
+                slot-scope="{}">
+        <i class="el-icon-sort" />
+      </template>
+      <template slot-scope="{}">
+        <span class="avue-crud__drag-handler">
+          <i class="el-icon-rank" />
+        </span>
+      </template>
+    </el-table-column>
     <!-- 选择框 -->
-    <el-table-column v-if="crud.tableOption.selection"
-                     :fixed="vaildData(crud.tableOption.selectionFixed,config.selectionFixed)"
+    <el-table-column v-if="tableOption.selection"
+                     :fixed="vaildData(tableOption.selectionFixed,config.selectionFixed)"
                      type="selection"
-                     key="selection"
-                     :selectable="crud.tableOption.selectable"
-                     :reserve-selection="vaildData(crud.tableOption.reserveSelection)"
-                     :width="crud.tableOption.selectionWidth || config.selectionWidth"
+                     :selectable="tableOption.selectable"
+                     :reserve-selection="vaildData(tableOption.reserveSelection)"
+                     :width="tableOption.selectionWidth || config.selectionWidth"
                      align="center"></el-table-column>
     <!-- 序号 -->
-    <el-table-column v-if="vaildData(crud.tableOption.index)"
-                     :fixed="vaildData(crud.tableOption.indexFixed,config.indexFixed)"
-                     :label="crud.tableOption.indexLabel || config.indexLabel"
+    <el-table-column v-if="vaildData(tableOption.index)"
+                     :fixed="vaildData(tableOption.indexFixed,config.indexFixed)"
+                     :label="tableOption.indexLabel || config.indexLabel"
                      type="index"
-                     key="index"
-                     :width="crud.tableOption.indexWidth || config.indexWidth"
+                     :width="tableOption.indexWidth || config.indexWidth"
                      :index="indexMethod"
                      align="center"></el-table-column>
   </div>
@@ -40,9 +51,8 @@
 
 import create from "core/create";
 import config from "./config.js";
-import packages from "core/packages";
-import locale from "core/locale";
-import permission from 'common/directive/permission';
+import locale from "../../core/common/locale";
+import permission from '../../core/directive/permission';
 export default create({
   name: "crud",
   data () {
@@ -52,8 +62,18 @@ export default create({
   },
   mixins: [locale],
   inject: ["crud"],
-  mounted () {
-    this.setSort()
+  props: {
+    tableOption: {
+      type: Object,
+      default: () => {
+        return {};
+      }
+    }
+  },
+  computed: {
+    isSortable () {
+      return this.tableOption.sortable;
+    }
   },
   methods: {
     indexMethod (index) {
@@ -65,31 +85,48 @@ export default create({
       );
     },
     setSort () {
-      this.rowDrop()
-      this.columnDrop()
-    },
-    rowDrop () {
-      const el = this.crud.$refs.table.$el.querySelectorAll(this.config.dropRowClass)[0]
-      this.crud.tableDrop('row', el, evt => {
-        const oldIndex = evt.oldIndex;
-        const newIndex = evt.newIndex;
-        const targetRow = this.crud.list.splice(oldIndex, 1)[0]
-        this.crud.list.splice(newIndex, 0, targetRow)
-        this.crud.$emit('sortable-change', oldIndex, newIndex)
-        this.crud.refreshTable(() => this.rowDrop())
-
-      })
-    },
-    columnDrop () {
-      let el = this.crud.$refs.table.$el.querySelector(this.config.dropColClass);
-      let noIndexCount = 0;
-      ['selection', 'index', 'expand'].forEach(ele => {
-        if (this.crud.tableOption[ele]) { noIndexCount += 1 }
-      })
-      this.crud.tableDrop('column', el, evt => {
-        this.crud.headerSort(evt.oldIndex - noIndexCount, evt.newIndex - noIndexCount)
+      if (this.isSortable) {
+        if (!window.Sortable) {
+          packages.logs("Sortable")
+          return
+        }
+        this.rowDrop()
         this.columnDrop()
+      }
+    },
+    //行排序
+    rowDrop () {
+      const el = this.crud.$refs.table.$el.querySelectorAll('.el-table__body-wrapper > table > tbody')[0]
+      this.sortable = window.Sortable.create(el, {
+        ghostClass: 'avue-crud__sortable',
+        handle: this.tableOption.dragHandler ? '.avue-crud__drag-handler' : undefined,
+        onEnd: evt => {
+          const oldindex = evt.oldIndex;
+          const newindex = evt.newIndex;
+          const targetRow = this.crud.list.splice(oldindex, 1)[0]
+          this.crud.list.splice(newindex, 0, targetRow)
+          this.crud.$emit('sortable-change', oldindex, newindex, targetRow, this.crud.list)
+        }
       })
+    },
+    //列排序
+    columnDrop () {
+      const wrapperTr = this.crud.$refs.table.$el.querySelector('.el-table__header-wrapper tr');
+      window.Sortable.create(wrapperTr, {
+        animation: 180,
+        delay: 0,
+        onEnd: evt => {
+          const oldIndex = evt.oldIndex - 1;
+          const newIndex = evt.newIndex - 1;
+          let column = this.crud.propOption;
+          let targetRow = column.splice(oldIndex, 1)[0]
+          column.splice(newIndex, 0, targetRow)
+          this.crud.refreshTable()
+          this.crud.propOption.forEach((ele, index) => {
+            this.crud.default[ele.prop].order = index;
+          })
+        }
+      });
     },
   }
 })

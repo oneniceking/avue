@@ -10,15 +10,15 @@
              :style="{backgroundColor:item.color}">
           <div class="item-box">
             <avue-count-up class="item-count"
-                           :decimals="item.decimals || decimals"
-                           :animation="item.animation || animation"
+                           :decimals="decimals"
+                           :animation="animation"
                            :end="item.count"></avue-count-up>
             <span class="item-title">{{item.title}}</span>
             <i class="item-icon"
                :class="item.icon"></i>
           </div>
-          <a :href="item.href"
-             @click="item.click&&item.click(item)">
+          <a :href="item.href?item.href:'javascript:void(0);'"
+             @click="item.click?item.click(item):''">
             <p class="item-more">更多<i class="el-icon-arrow-right"></i></p>
           </a>
         </div>

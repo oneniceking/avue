@@ -2,18 +2,16 @@
   <div :class="b()">
     <el-date-picker :type="type"
                     v-model="text"
-                    :popper-class="popperClass"
                     :size="size"
-                    :editable="editable"
                     :unlink-panels="unlinkPanels"
                     :readonly="readonly"
                     :default-value="defaultValue"
                     :default-time="defaultTime"
                     :range-separator="rangeSeparator"
-                    :start-placeholder="startPlaceholder || t('date.start')"
-                    :end-placeholder="endPlaceholder || t('date.end')"
+                    :start-placeholder="startPlaceholder"
+                    :end-placeholder="endPlaceholder"
                     :format="format"
-                    :clearable="clearableVal"
+                    :clearable="disabled?false:clearable"
                     :picker-options="pickerOptions"
                     :value-format="valueFormat"
                     :placeholder="placeholder"
@@ -26,27 +24,52 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
-import locale from "core/locale";
+import { GetDateStr } from "utils/date.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
+import locale from "../../core/common/locale";
 export default create({
   name: "date",
   mixins: [props(), event(), locale],
+  data () {
+    return {
+      text: "",
+      menu: [],
+    };
+  },
   props: {
-    editable: Boolean,
-    unlinkPanels: Boolean,
-    startPlaceholder: String,
-    endPlaceholder: String,
-    rangeSeparator: String,
-    defaultValue: [String, Array],
-    defaultTime: [String, Array],
-    pickerOptions: Object,
+    unlinkPanels: {
+      type: Boolean,
+      default: false
+    },
+    value: {},
+    startPlaceholder: {
+      type: String,
+      default: "开始日期"
+    },
+    endPlaceholder: {
+      type: String,
+      default: "结束日期"
+    },
+    rangeSeparator: {
+      type: String
+    },
+    defaultValue: {
+      type: [String, Array]
+    },
+    defaultTime: {
+      type: [String, Array]
+    },
+    pickerOptions: {
+      type: Object,
+      default: () => { }
+    },
     type: {
       type: String,
       default: "date"
     },
-    valueFormat: String,
-    format: String
+    valueFormat: {},
+    format: {}
   }
 });
 </script>

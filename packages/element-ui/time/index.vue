@@ -1,48 +1,66 @@
 <template>
   <div :class="b()">
-    <component :is="componentName"
-               v-model="text"
-               :popper-class="popperClass"
-               :is-range="isRange"
-               :size="size"
-               :editable="editable"
-               :default-value="defaultValue"
-               :range-separator="rangeSeparator"
-               :arrow-control="arrowControl"
-               :start-placeholder="startPlaceholder || t('time.start')"
-               :end-placeholder="endPlaceholder || t('time.end')"
-               :format="format"
-               :readonly="readonly"
-               :clearable="clearableVal"
-               :picker-options="pickerOptions"
-               :value-format="valueFormat"
-               :placeholder="placeholder"
-               @change="handleChange"
-               @click.native="handleClick"
-               :disabled="disabled">
-    </component>
+    <el-time-picker v-model="text"
+                    :is-range="isRange"
+                    :size="size"
+                    :default-value="defaultValue"
+                    :range-separator="rangeSeparator"
+                    :arrow-control="arrowControl"
+                    :start-placeholder="startPlaceholder"
+                    :end-placeholder="endPlaceholder"
+                    :format="format"
+                    :readonly="readonly"
+                    :clearable="disabled?false:clearable"
+                    :value-format="valueFormat"
+                    :placeholder="placeholder"
+                    @change="handleChange"
+                    @click.native="handleClick"
+                    :disabled="disabled"></el-time-picker>
   </div>
 </template>
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
-import locale from "core/locale";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
+import locale from "../../core/common/locale";
 export default create({
   name: "time",
   mixins: [props(), event(), locale],
+  data () {
+    return {};
+  },
   props: {
-    editable: Boolean,
-    startPlaceholder: String,
-    endPlaceholder: String,
-    rangeSeparator: String,
-    defaultValue: [String, Array],
-    pickerOptions: Object,
-    valueFormat: String,
-    arrowControl: Boolean,
-    type: String,
-    format: String
+    startPlaceholder: {
+      type: String,
+      default: "开始时间"
+    },
+    endPlaceholder: {
+      type: String,
+      default: "结束时间"
+    },
+    rangeSeparator: {
+      type: String
+    },
+    value: {
+      required: true
+    },
+    defaultValue: {
+      type: [String, Array]
+    },
+    valueFormat: {
+      default: ""
+    },
+    arrowControl: {
+      type: Boolean,
+      default: false
+    },
+    type: {
+      default: ""
+    },
+    format: {
+      default: ""
+    }
   },
   watch: {
     text () {
@@ -51,15 +69,9 @@ export default create({
       }
     }
   },
+  created () { },
+  mounted () { },
   computed: {
-    componentName () {
-      let pickerOptions = this.pickerOptions || {}
-      if (pickerOptions.start || pickerOptions.end || pickerOptions.step) {
-        return "elTimeSelect"
-      } else {
-        return "elTimePicker"
-      }
-    },
     isRange () {
       return this.type === "timerange";
     }

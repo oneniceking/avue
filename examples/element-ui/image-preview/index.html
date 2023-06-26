@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
   <link rel="stylesheet" href="https://cdn.staticfile.org/animate.css/3.7.0/animate.min.css" />
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -46,22 +46,13 @@
       return {
         datas: [
           { thumbUrl: `https://img.alicdn.com/tfs/TB1uevcCrj1gK0jSZFuXXcrHpXa-1880-640.jpg`, url: `https://img.alicdn.com/tfs/TB1uevcCrj1gK0jSZFuXXcrHpXa-1880-640.jpg` },
-          { thumbUrl: `https://img.alicdn.com/tfs/TB1v28TC8v0gK0jSZKbXXbK2FXa-1880-640.jpg`, url: `https://www.w3school.com.cn/i/movie.ogg` },
-          { thumbUrl: `https://img.alicdn.com/tfs/TB1v28TC8v0gK0jSZKbXXbK2FXa-1880-640.jpg`, url: `https://www.runoob.com/try/demo_source/horse.mp3` },
+          { thumbUrl: `https://img.alicdn.com/tfs/TB1v28TC8v0gK0jSZKbXXbK2FXa-1880-640.jpg`, url: `https://img.alicdn.com/tfs/TB1v28TC8v0gK0jSZKbXXbK2FXa-1880-640.jpg` },
         ]
       }
     },
     methods: {
       openPreview(index = 0) {
-        this.$ImagePreview(this.datas, index, {
-          closeOnClickModal: true,
-          click: (data, index) => {
-            alert(index)
-          },
-          beforeClose: (data, index) => {
-            console.log(data, index);
-          }
-        });
+        this.$ImagePreview(this.datas, index);
       }
     }
   })

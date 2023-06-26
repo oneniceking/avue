@@ -1,18 +1,22 @@
 import { validatenull } from 'utils/validate';
-import { KEY_COMPONENT_NAME, DIC_SPLIT, ARRAY_LIST, DATE_LIST, INPUT_LIST, ARRAY_VALUE_LIST, MULTIPLE_LIST, SELECT_LIST, RANGE_LIST } from 'global/variable';
+import { KEY_COMPONENT_NAME, DIC_SPLIT, ARRAY_LIST, DATE_LIST, INPUT_LIST, ARRAY_VALUE_LIST, MULTIPLE_LIST, SELECT_LIST } from 'global/variable';
 import { detailDataType, findObject, createObj } from 'utils/util';
 import { t } from 'locale';
 /**
  * 计算级联属性
  */
 export const calcCascader = (list = []) => {
-  list.forEach(ele => {
-    let cascader = ele.cascader
-    if (!validatenull(cascader)) {
+  list.forEach((ele, index) => {
+    if (!validatenull(ele.cascaderItem)) {
+      let cascader = [...ele.cascaderItem];
       let parentProp = ele.prop;
-      cascader.forEach(citem => {
+      list[index].cascader = [...cascader];
+      cascader.forEach((citem, cindex) => {
         let column = findObject(list, citem);
-        if (column) column.parentProp = parentProp;
+        if (column === -1) return;
+        column.parentProp = parentProp;
+        column.cascader = [...cascader].splice(cindex + 1);
+        parentProp = column.prop;
       });
     }
   });
@@ -40,28 +44,28 @@ export const calcCount = (ele, spanDefault = 12, init = false) => {
 /**
  * 初始化数据格式
  */
-export const initVal = (value, safe) => {
-  let { type, multiple, dataType, separator = DIC_SPLIT, alone, emitPath, range } = safe
+export const initVal = ({ type, multiple, dataType, value, callback, separator = DIC_SPLIT }) => {
   let list = value;
   if (
-    (MULTIPLE_LIST.includes(type) && multiple == true) ||
-    (ARRAY_VALUE_LIST.includes(type) && emitPath !== false) ||
-    (RANGE_LIST.includes(type) && range == true)
+    (MULTIPLE_LIST.includes(type) && multiple) ||
+    ARRAY_VALUE_LIST.includes(type)
   ) {
+
     if (!Array.isArray(list)) {
       if (validatenull(list)) {
         list = [];
       } else {
         list = (list + '').split(separator) || [];
+        callback && callback(true);
       }
+    } else {
+      callback && callback(false);
     }
     // 数据转化
     list.forEach((ele, index) => {
       list[index] = detailDataType(ele, dataType);
     });
-    if (ARRAY_LIST.includes(type) && validatenull(list) && alone) list = [''];
-  } else {
-    list = detailDataType(list, dataType)
+    if (ARRAY_LIST.includes(type) && validatenull(list)) list = [''];
   }
   return list;
 };
@@ -73,7 +77,6 @@ export const getSearchType = (column) => {
   const type = column.type;
   const range = column.searchRange;
   let result = type;
-  if (column.searchType) return column.searchType;
   if (['radio', 'checkbox', 'switch'].includes(type)) {
     result = 'select';
   } else if (DATE_LIST.includes(type)) {
@@ -120,12 +123,11 @@ export const formInitVal = (list = []) => {
   let tableForm = {};
   list.forEach(ele => {
     if (
-      (ARRAY_VALUE_LIST.includes(ele.type) && ele.emitPath !== false) ||
-      (MULTIPLE_LIST.includes(ele.type) && ele.multiple) || ele.dataType === 'array'
+      ARRAY_VALUE_LIST.includes(ele.type) ||
+      (MULTIPLE_LIST.includes(ele.type) && ele.multiple) ||
+      ele.range || ele.dataType === 'array'
     ) {
       tableForm[ele.prop] = [];
-    } else if (RANGE_LIST.includes(ele.type) && ele.range == true) {
-      tableForm[ele.prop] = [0, 0]
     } else if (
       ['rate', 'slider', 'number'].includes(ele.type) ||
       ele.dataType === 'number'
@@ -147,15 +149,23 @@ export const formInitVal = (list = []) => {
   };
 };
 
-export const getPlaceholder = function (column) {
+export const getPlaceholder = function (column, type) {
   const placeholder = column.placeholder;
   const label = column.label;
-  if (validatenull(placeholder)) {
+  if (type === 'search') {
+    const searchPlaceholder = column.searchPlaceholder;
+    if (!validatenull(searchPlaceholder)) {
+      return searchPlaceholder;
+    } else {
+      return label;
+    }
+  } else if (validatenull(placeholder)) {
     if (SELECT_LIST.includes(column.type)) {
       return `${t('tip.select')} ${label}`;
     } else {
       return `${t('tip.input')} ${label}`;
     }
   }
+
   return placeholder;
 };

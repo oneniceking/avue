@@ -1,13 +1,10 @@
 .avue-group{
-  width: 100%;
   .el-collapse,.el-collapse-item__wrap{
     border-color:#fff;
   }
   .el-collapse-item__header{
     height: inherit;
     border:none;
-    border-bottom:1px solid #eee;
-    margin-bottom: 20px;
   }
   .el-collapse-item__content,.van-collapse-item__content{
     padding-bottom: 0;
@@ -40,6 +37,9 @@
       display: none;
     }
   }
+  .el-collapse-item__arrow{
+    margin-top: -25px;
+  }
   &--collapse{
     .el-collapse-item__arrow,.el-collapse-item__header{
       display: flex !important;
@@ -58,11 +58,13 @@
 
   &__header {
     width: 100%;
+    margin-bottom: 30px;
     display: flex;
     align-items: center;
     height: 50px;
     line-height: 50px;
     box-sizing: border-box;
+    border-bottom:1px solid #eee;
 }
   &__icon {
       margin-right: 8px;

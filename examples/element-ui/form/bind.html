@@ -9,9 +9,10 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
+  <script src="https://avuex.avue.top/cdn/aliyun-oss-sdk.min.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -20,6 +21,9 @@
 <body>
   <div id="app">
     {{form}}
+    <el-button type="primary" size="small" @click="form.deep.deep.deep.test1='1.1'">
+      改变1</el-button>
+    <el-button type="primary" size="small" @click="form.deep.deep.deep.test2='1.2'">改变2</el-button>
     <avue-form :option="option" v-model="form"> </avue-form>
   </div>
 </body>
@@ -29,44 +33,28 @@
     data() {
       return {
         form: {
-          text1: 0,
           deep: {
-            deep: 0
+            deep: {
+              deep: {
+                test1: 1,
+                test2: 2
+              }
+            }
           }
         },
         option: {
-          column: [{
-            label: '内容1',
-            prop: 'text1',
-            bind: 'deep.deep',
-            type: 'radio',
-            control: (val, form) => {
-              if (val === 0) {
-                return {
-                  text2: {
-                    display: true
-                  }
-                }
-              } else {
-                return {
-                  text2: {
-                    display: false
-                  }
-                }
-              }
-            },
-            dicData: [{
-              label: '显示',
-              value: 0
+          labelWidth: 120,
+          column: [
+            {
+              label: '我是深结构1',
+              prop: 'test1',
+              bind: 'deep.deep.deep.test1'
             }, {
-              label: '隐藏',
-              value: 1,
-            }]
-          }, {
-            label: '内容2',
-            prop: 'text2',
-            display: true
-          }]
+              label: '我是深结构2',
+              prop: 'test2',
+              bind: 'deep.deep.deep.test2'
+            }
+          ]
         }
       }
     }

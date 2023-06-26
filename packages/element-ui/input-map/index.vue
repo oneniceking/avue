@@ -1,88 +1,59 @@
 <template>
   <div :class="b()">
-    <el-input :prefix-icon="prefixIcon"
-              :suffix-icon="suffixIcon"
-              :size="size"
+    <el-input :size="size"
               @clear="handleClear"
-              :clearable="clearableVal"
-              :rows="rows"
-              :autosize="{ minRows: minRows, maxRows: maxRows}"
+              :clearable="disabled?false:clearable"
               :disabled="disabled"
               ref="main"
-              type="textarea"
               v-model="address"
               @focus="handleShow"
               @click.native="handleClick"
               :placeholder="placeholder">
     </el-input>
-    <div v-if="box">
-      <el-dialog class="avue-dialog avue-dialog--none"
-                 :width="dialogWidth"
-                 :modal-append-to-body="$AVUE.modalAppendToBody"
-                 :append-to-body="$AVUE.appendToBody"
-                 :title="placeholder"
-                 @close="handleClose"
-                 :visible.sync="box">
-        <div :class="b('content')"
-             v-if="box">
-          <el-input :class="b('content-input')"
-                    id="map__input"
-                    :size="size"
-                    @clear="clear"
-                    :readonly="disabled"
-                    v-model="formattedAddress"
-                    clearable
-                    placeholder="输入关键字选取地点"></el-input>
-          <div :class="b('content-box')">
-            <div id="map__container"
-                 :class="b('content-container')"
-                 tabindex="0"></div>
-            <div id="map__result"
-                 :class="b('content-result')"></div>
-          </div>
-        </div>
-        <span slot="footer"
-              class="dialog-footer">
-          <el-button type="primary"
-                     :size="size"
-                     icon="el-icon-check"
-                     v-if="!(disabled || readonly)"
-                     @click="handleSubmit">{{t("common.submitBtn")}}</el-button>
-        </span>
-      </el-dialog>
-    </div>
 
+    <el-dialog class="avue-dialog"
+               width="80%"
+               append-to-body
+               :title="placeholder"
+               @close="handleClose"
+               :visible.sync="box">
+      <div :class="b('content')"
+           v-if="box">
+        <el-input :class="b('content-input')"
+                  id="map__input"
+                  :size="size"
+                  @clear="clear"
+                  :readonly="disabled"
+                  v-model="formattedAddress"
+                  clearable
+                  placeholder="输入关键字选取地点"></el-input>
+        <div :class="b('content-box')">
+          <div id="map__container"
+               :class="b('content-container')"
+               tabindex="0"></div>
+          <div id="map__result"
+               :class="b('content-result')"></div>
+        </div>
+      </div>
+      <span slot="footer"
+            class="dialog-footer">
+        <el-button type="primary"
+                   :size="size"
+                   icon="el-icon-check"
+                   v-if="!(disabled || readonly)"
+                   @click="handleSubmit">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
 import packages from "core/packages";
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
-import locale from "core/locale";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "input-map",
-  mixins: [props(), event(), locale],
-  props: {
-    prefixIcon: {
-      type: String
-    },
-    suffixIcon: {
-      type: String
-    },
-    dialogWidth: {
-      type: String,
-      default: '80%'
-    },
-    rows: Number,
-    minRows: {
-      type: Number,
-      default: 1
-    },
-    maxRows: {
-      type: Number
-    },
-  },
+  mixins: [props(), event()],
   data () {
     return {
       formattedAddress: '',
@@ -100,7 +71,6 @@ export default create({
     value (val) {
       if (this.validatenull(val)) {
         this.poi = {}
-        this.address = ''
       }
     },
     text (val) {

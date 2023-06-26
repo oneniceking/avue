@@ -1,13 +1,13 @@
 const gulp = require("gulp");
-const sass = require('gulp-sass')(require('sass'));
+var sass = require("gulp-sass");
 var autoprefixer = require("gulp-autoprefixer");
 var cssmin = require("gulp-cssmin");
 const webpack = require("webpack");
 const webpackConf = require("./build/build.js");
 
 // 构建webpack配置
-gulp.task("webpack", async function () {
-  await webpack(webpackConf, function (err, stats) {
+gulp.task("webpack", async function() {
+  await webpack(webpackConf, function(err, stats) {
     if (err) {
       console.log(err);
     }
@@ -15,10 +15,10 @@ gulp.task("webpack", async function () {
 });
 
 // 处理样式的配置
-gulp.task("compile", function () {
+gulp.task("compile", function() {
   return gulp
     .src("./styles/index.scss")
-    .pipe(sass())
+    .pipe(sass.sync())
     .pipe(
       autoprefixer({
         browsers: ["ie > 9", "last 2 versions"],
@@ -28,25 +28,12 @@ gulp.task("compile", function () {
     .pipe(cssmin())
     .pipe(gulp.dest("./lib/"));
 });
-// 处理国际化相关
-gulp.task("locale", function () {
-  return gulp
-    .src("./src/locale/**")
-    .pipe(gulp.dest("./lib/locale"));
-});
 
 // 打包文件
-gulp.task("build", gulp.series(["locale", "compile", "webpack"]));
+gulp.task("build", gulp.series(["webpack", "compile"]));
 
 // 监听文件变化
-gulp.task("listen", async function () {
-  gulp.watch(["./styles/**"], gulp.series(["compile"]));
+gulp.task("watch", async function() {
   gulp.watch(["./src/**", "./packages/**"], gulp.series(["webpack"]));
+  gulp.watch(["./styles/**"], gulp.series(["compile"]));
 });
-
-gulp.task("watch", gulp.series(["compile", "webpack", "listen"]));
-
-
-
-
-

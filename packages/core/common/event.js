@@ -1,25 +1,22 @@
 import { initVal } from 'core/dataformat';
-import { findNode } from 'utils/util'
+function bindEvent (safe, name, event) {
+  typeof safe[name] === 'function' && safe[name]({ value: safe.value, column: safe.column })
+  safe.$emit(name, safe.value, event)
+}
 export default function () {
   return {
     methods: {
-      bindEvent (name, params) {
-        let item = findNode(this.dic, this.props, this.text)
-        params = Object.assign(params, { column: this.column, dic: this.dic, item }, this.tableData)
-        if (typeof this[name] === 'function') {
-          if (name == 'change') {
-            if (this.column.cell != true) {
-              this[name](params)
-            }
-          } else {
-            this[name](params)
-          }
-        }
-        this.$emit(name, params)
-      },
       initVal () {
-        this.stringMode = typeof (this.value) == 'string'
-        this.text = initVal(this.value, this);
+        this.text = initVal({
+          type: this.type,
+          multiple: this.multiple,
+          dataType: this.dataType,
+          value: this.value,
+          separator: this.separator,
+          callback: (result) => {
+            this.stringMode = result;
+          }
+        });
       },
       getLabelText (item) {
         if (this.validatenull(item)) return ''
@@ -29,22 +26,24 @@ export default function () {
         return item[this.labelKey]
       },
       handleFocus (event) {
-        this.bindEvent('focus', { value: this.value, event })
+        bindEvent(this, 'focus', event)
       },
       handleBlur (event) {
-        this.bindEvent('blur', { value: this.value, event })
+        bindEvent(this, 'blur', event)
       },
       handleClick (event) {
-        this.bindEvent('click', { value: this.value, event })
+        bindEvent(this, 'click', event)
       },
       handleChange (value) {
         let result = value;
-        let flag = this.isString || this.isNumber || this.stringMode || this.listType === "picture-img";
-        if (flag && Array.isArray(value)) {
-          result = value.join(this.separator)
+        if (this.isString || this.isNumber || this.stringMode || this.listType === "picture-img") {
+          if (Array.isArray(value)) result = value.join(',')
         }
-        this.bindEvent('change', { value: result })
+        if (typeof this.change === 'function' && this.column.cell !== true) {
+          this.change({ value: result, column: this.column });
+        }
         this.$emit('input', result);
+        this.$emit('change', result);
       }
     }
   };

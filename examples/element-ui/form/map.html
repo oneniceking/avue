@@ -8,18 +8,13 @@
   <title></title>
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script>
-    window._AMapSecurityConfig = {
-      securityJsCode: '40aea952b55651f7167e664758dd34ad',
-    }
-  </script>
   <script
-    src="https://webapi.amap.com/maps?v=1.4.15&key=99f1daf29cf6a392743586a6a9b6311e&plugin=AMap.Geocoder"></script>
+    src="https://webapi.amap.com/maps?v=1.4.11&key=7ab53b28352e55dc5754699add0ad862&plugin=AMap.PlaceSearch"></script>
   <script src="https://webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
 </head>
@@ -35,19 +30,15 @@
     el: '#app',
     data() {
       return {
-        obj: {},
+        obj: {
+          map: '113.12209610000252,41.03928506034977, 内蒙古自治区乌兰察布市集宁区前进路街道新体大街航天小区'
+        },
         option: {
           column: [
-            {
-              label: '地图1',
-              prop: 'input',
-              value: 1
-            },
             {
               label: '地图',
               prop: 'map',
               type: 'map',
-              value: '113.12209610000252,41.03928506034977, 内蒙古自治区乌兰察布市集宁区前进路街道新体大街航天小区',
               rules: [
                 {
                   required: true,

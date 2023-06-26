@@ -5,25 +5,24 @@
              :multiple="multiple"
              :multiple-limit="limit"
              :collapse-tags="tags"
-             @click="handleClick"
+             @click.native="initScroll"
              :value="labelShow"
-             :clearable="clearableVal"
+             :clearable="disabled?false:clearable"
              :placeholder="placeholder"
-             :popper-class="popperClass"
-             :popper-append-to-body="popperAppendToBody"
              @focus="handleFocus"
              @blur="handleBlur"
              @clear="handleClear"
              :disabled="disabled">
     <div v-if="filter"
-         :class="b('filter')">
+         style="padding:0 10px;margin:5px 0 0 0;">
       <el-input size="mini"
                 :placeholder="filterText"
                 v-model="filterValue"></el-input>
     </div>
     <el-option :value="text">
       <el-tree :data="dicList"
-               :class="b('select')"
+               class="tree-option"
+               style="padding:10px 0;"
                :lazy="lazy"
                :load="handleTreeLoad"
                :node-key="valueKey"
@@ -34,25 +33,22 @@
                :props="treeProps"
                :check-strictly="checkStrictly"
                ref="tree"
-               :highlight-current="multiple!=true"
-               :current-node-key="currentNodeKey"
+               :highlight-current="!multiple"
+               :current-node-key="multiple?'':text"
                @check="checkChange"
                :filter-node-method="filterNode"
-               :default-checked-keys="keysList"
-               :default-expanded-keys="defaultExpandedKeys?defaultExpandedKeys:keysList"
+               :default-expanded-keys="defaultExpandedKeys?defaultExpandedKeys:(defaultExpandAll?[]:keysList)"
+               :default-checked-keys="defaultCheckedKeys?defaultCheckedKeys:keysList"
                :default-expand-all="defaultExpandAll"
                @node-click.self="handleNodeClick">
-        <div slot-scope="{ data }"
-             :class="b('item')">
+        <div style="width:100%;padding-right:10px;"
+             slot-scope="{ data }">
           <slot v-if="$scopedSlots.default"
                 :label="labelKey"
                 :value="valueKey"
                 :item="data"></slot>
-          <template v-else>
-            <span :class="{'avue--disabled':data[disabledKey]}">{{data[labelKey]}}</span>
-            <span :class="b('desc')"
-                  v-if="data[descKey]">{{ data[descKey] }}</span>
-          </template>
+          <span v-else
+                :class="{'avue--disabled':data[disabledKey]}">{{data[labelKey]}}</span>
         </div>
       </el-tree>
     </el-option>
@@ -61,9 +57,10 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 import { DIC_SHOW_SPLIT } from 'global/variable';
+import { detailDataType } from 'utils/util';
 export default create({
   name: "input-tree",
   mixins: [props(), event()],
@@ -72,13 +69,13 @@ export default create({
       node: [],
       filterValue: "",
       box: false,
-      dicList: []
     };
   },
   props: {
     nodeClick: Function,
     treeLoad: Function,
     checked: Function,
+    value: {},
     lazy: {
       type: Boolean,
       default: false
@@ -105,7 +102,7 @@ export default create({
     },
     filterText: {
       type: String,
-      default: ''
+      default: '输入关键字进行过滤'
     },
     checkStrictly: {
       type: Boolean,
@@ -119,32 +116,31 @@ export default create({
       type: Boolean,
       default: true
     },
-    iconClass: String,
-    defaultExpandedKeys: Array,
+    defaultExpandedKeys: {
+      type: Array,
+    },
+    iconClass: {
+      type: String,
+    },
+    defaultCheckedKeys: {
+      type: Array,
+    },
     defaultExpandAll: {
       type: Boolean,
       default: false
     },
-    popperAppendToBody: {
-      type: Boolean,
-      default: true
-    }
   },
   watch: {
-    text (val) {
-      this.init();
-    },
-    dic: {
-      handler (val) {
-        this.dicList = val;
-      },
-      immediate: true
-    },
-    dicList: {
-      handler () {
+    text: {
+      handler (value) {
         this.init();
+        if (this.validatenull(value)) {
+          this.clearHandle();
+        }
       },
-      immediate: true
+    },
+    dic () {
+      this.init();
     },
     filterValue (val) {
       this.$refs.tree.filter(val);
@@ -156,25 +152,57 @@ export default create({
         isLeaf: this.leafKey
       })
     },
-    currentNodeKey () {
-      return this.multiple ? '' : this.text
+    dicList () {
+      function addParent (result, parent) {
+        result.forEach(ele => {
+          const children = ele.children;
+          if (children) {
+            addParent(children, ele);
+          }
+          if (parent) {
+            ele.$parent = parent;
+          }
+        });
+      }
+      let list = this.dic;
+      addParent(list);
+      return list;
     },
     keysList () {
-      return this.multiple ? this.text : [this.text || '']
+      if (this.validatenull(this.text)) return [];
+      let list = []
+      if (Array.isArray(this.text)) {
+        list = this.text;
+      }
+      else {
+        list = (this.text + '').split(this.separator)
+        list = list.map(ele => detailDataType(ele, this.dataType))
+      }
+      return list
     },
     labelShow () {
-      let list = [...this.node]
-      let result = list.map(ele => this.getLabelText(ele))
-      return result
+      let result = [];
+      let list = this.deepClone(this.node);
+      if (this.typeformat) {
+        result = list.map(ele => this.getLabelText(ele))
+      } else {
+        result = list.map(ele => ele[this.labelKey])
+      }
+      if (this.multiple) {
+        return result
+      } else {
+        return result.join('')
+      }
     }
   },
   methods: {
     handleClear () {
-      this.text = this.multiple ? [] : '';
+      if (this.multiple) {
+        this.text = [];
+      } else {
+        this.text = '';
+      }
       this.node = [];
-      this.filterValue = '';
-      this.$refs.tree.setCurrentKey(null)
-      this.$refs.tree.setCheckedKeys([]);
     },
     handleTreeLoad (node, resolve) {
       let callback = (list) => {
@@ -187,17 +215,29 @@ export default create({
             }
           })
         }
-        findDic(this.dicList, node.key, list)
+        findDic(this.dic, node.key, list)
         resolve(list);
       }
       this.treeLoad && this.treeLoad(node, callback)
     },
+    // 初始化滚动条
+    initScroll (event) {
+      setTimeout(() => {
+        this.$nextTick(() => {
+          let scrollBar = document.querySelectorAll('.el-scrollbar .el-select-dropdown__wrap')
+          scrollBar.forEach(ele => {
+            ele.scrollTop = 0;
+          })
+        })
+      }, 0)
+      this.handleClick(event);
+    },
     filterNode (value, data) {
       if (!value) return true;
-      return data[this.labelKey].toLowerCase().indexOf(value.toLowerCase()) !== -1;
+      return data[this.labelKey].indexOf(value) !== -1;
     },
     checkChange (checkedNodes, checkedKeys, halfCheckedNodes, halfCheckedKeys) {
-      this.text.splice(0, this.text.length)
+      this.text = [];
       const list = this.$refs.tree.getCheckedNodes(this.leafOnly, false);
       list.forEach(node => this.text.push(node[this.valueKey]));
       if (typeof this.checked === "function") this.checked(checkedNodes, checkedKeys, halfCheckedNodes, halfCheckedKeys);
@@ -211,14 +251,10 @@ export default create({
       this.$nextTick(() => {
         this.node = [];
         if (this.multiple) {
-          if (this.validatenull(this.text)) {
-            this.$refs.tree.setCheckedKeys([]);
-          } else {
-            let list = this.$refs.tree.getCheckedNodes(this.leafOnly, false)
-            list.forEach(ele => {
-              this.node.push(ele);
-            })
-          }
+          let list = this.$refs.tree.getCheckedNodes(this.leafOnly, false)
+          list.forEach(ele => {
+            this.node.push(ele);
+          })
         } else {
           let node = this.$refs.tree.getNode(this.text)
           if (node) {
@@ -241,6 +277,11 @@ export default create({
           this.disabledParentNode(children, parent);
         }
       });
+    },
+    clearHandle () {
+      this.filterValue = '';
+      this.$refs.tree.setCurrentKey(null)
+      this.$refs.tree.setCheckedKeys([]);
     },
     handleNodeClick (data, node, nodeComp) {
       if (data.disabled) return

@@ -1,6 +1,28 @@
 // crud配置文件
 export default {
-  menuWidth: 220,
+  defaultColumn: [{
+    label: '隐藏',
+    prop: 'hide'
+  }, {
+    label: '冻结',
+    prop: 'fixed'
+  }, {
+    label: '过滤',
+    prop: 'filters'
+  }, {
+    label: '筛选',
+    prop: 'screen'
+  }, {
+    label: '排序',
+    prop: 'sortable'
+  }, {
+    label: '宽度',
+    prop: 'width',
+    width: 'auto'
+  }],
+  clientHeight: document.documentElement.clientHeight,
+  // 尺寸
+  menuWidth: 240,
   menuFixed: 'right',
   menuXsWidth: 100,
   menuAlign: 'center',
@@ -46,10 +68,14 @@ export default {
   selectClearBtn: true,
   searchShow: true,
   tip: true,
+  dialogTop: '100',
+  dialogHeight: 'auto',
   dialogWidth: '60%',
   dialogDrag: false,
   formFullscreen: false,
+  customClass: '',
   pageBackground: true,
+  simplePage: false,
   page: true,
   menu: true,
   indexLabel: '#',
@@ -59,13 +85,13 @@ export default {
   selectionFixed: 'left',
   expandWidth: 60,
   expandFixed: 'left',
+  sortableWidth: 50,
+  sortableFixed: false,
   filterMultiple: true,
   calcHeight: 300,
+  title: '表格标题',
   width: '100%',
   searchGutter: 20,
   searchLabelWidth: 80,
   searchSpan: 6,
-  dropRowClass: '.el-table__body-wrapper > table > tbody',
-  dropColClass: '.el-table__header-wrapper tr',
-  ghostClass: 'avue-crud__ghost',
-}
+};

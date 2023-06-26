@@ -1,14 +1,13 @@
 <template>
-  <el-card :shadow="crud.isCard"
-           v-if="pageFlag && vaildData(crud.tableOption.page,true)"
-           :class="b('pagination')">
+  <div :class="b('pagination')">
     <slot name="page"></slot>
-    <el-pagination :small="crud.size=='mini'"
+    <el-pagination v-show="pageFlag"
+                   :small="crud.isMobile"
                    :disabled="defaultPage.disabled"
-                   :hide-on-single-page="defaultPage.single"
+                   :hide-on-single-page="vaildData(crud.tableOption.simplePage,config.simplePage)"
                    :pager-count="defaultPage.pagerCount"
                    :current-page.sync="defaultPage.currentPage"
-                   :background="defaultPage.background"
+                   :background="vaildData(defaultPage.background,config.pageBackground)"
                    :page-size="defaultPage.pageSize"
                    :page-sizes="defaultPage.pageSizes"
                    @size-change="sizeChange"
@@ -17,7 +16,7 @@
                    @current-change="currentChange"
                    :layout="defaultPage.layout"
                    :total="defaultPage.total"></el-pagination>
-  </el-card>
+  </div>
 </template>
 
 <script>
@@ -26,11 +25,18 @@ import create from "core/create";
 export default create({
   name: "crud",
   inject: ["crud"],
+  props: {
+    page: {
+      type: Object,
+      default: () => {
+        return {}
+      }
+    }
+  },
   data () {
     return {
       config: config,
       defaultPage: {
-        single: false,
         total: 0, // 总页数
         pagerCount: 7,//超过多少条隐藏
         currentPage: 1, // 当前页数
@@ -42,27 +48,28 @@ export default create({
     };
   },
   created () {
-    if (this.crud.isMobile) {
-      this.defaultPage.layout = 'total, sizes, prev, pager, next'
-    }
     this.pageInit();
     this.crud.$emit("on-load", this.defaultPage);
   },
   watch: {
-    'crud.page': {
+    page: {
       handler () {
         this.pageInit();
       },
       deep: true,
     },
     pageFlag () {
-      this.crud.getTableHeight();
+      this.$nextTick(() => {
+        this.crud.getTableHeight();
+      })
     },
     //如果当前页面删除没数据了调用第一页
     'defaultPage.total' (val) {
       if (this.defaultPage.total === (this.defaultPage.currentPage - 1) * this.defaultPage.pageSize && this.defaultPage.total != 0) {
         this.defaultPage.currentPage = this.defaultPage.currentPage - 1;
-        this.currentChange(this.defaultPage.currentPage)
+        this.crud.$emit("on-load", this.defaultPage);
+        this.crud.$emit("current-change", this.defaultPage.currentPage);
+        this.updateValue();
       }
     }
   },
@@ -73,7 +80,12 @@ export default create({
   },
   methods: {
     pageInit () {
-      this.defaultPage = Object.assign(this.defaultPage, this.crud.page)
+      this.defaultPage = Object.assign(this.defaultPage, this.page, {
+        total: Number(this.page.total || this.defaultPage.total),
+        pagerCount: Number(this.page.pagerCount || this.defaultPage.pagerCount),
+        currentPage: Number(this.page.currentPage || this.defaultPage.currentPage),
+        pageSize: Number(this.page.pageSize || this.defaultPage.pageSize)
+      })
       this.updateValue();
     },
     updateValue () {

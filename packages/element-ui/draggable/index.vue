@@ -71,10 +71,6 @@ export default create({
       type: Boolean,
       default: false
     },
-    lock: {
-      type: Boolean,
-      default: false
-    },
     step: {
       type: Number,
       default: 1
@@ -100,7 +96,6 @@ export default create({
   },
   data () {
     return {
-      first: true,
       value: '',
       baseWidth: 0,
       baseHeight: 0,
@@ -220,14 +215,6 @@ export default create({
       if (this.resize && this.children.style) {
         this.children.style.height = this.setPx(val);
       }
-    },
-    baseLeft (n, o) {
-      if (this.first) return
-      this.setMove(n - o, 0);
-    },
-    baseTop (n, o) {
-      if (this.first) return
-      this.setMove(0, n - o);
     }
   },
   mounted () {
@@ -241,16 +228,6 @@ export default create({
       this.baseLeft = getFixed(this.left);
       this.baseTop = getFixed(this.top);
       this.keyDown = document.onkeydown
-      this.$nextTick(() => {
-        this.first = false
-      })
-    },
-    setMove (left, top) {
-      this.$emit('move', {
-        index: this.index,
-        left: left,
-        top: top
-      })
     },
     setLeft (left) {
       this.baseLeft = left;
@@ -274,7 +251,7 @@ export default create({
       this.active = val;
     },
     rangeMove (e, position) {
-      if (this.disabled || this.lock) return
+      if (this.disabled) return
       //移动的方向
       let x, y;
       //移动的位置
@@ -366,7 +343,7 @@ export default create({
       });
     },
     handleMove (e) {
-      if (this.disabled || this.lock) return
+      if (this.disabled) return
       setTimeout(() => {
         this.$refs.input.focus()
       })

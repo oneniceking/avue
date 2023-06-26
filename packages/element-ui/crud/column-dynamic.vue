@@ -1,61 +1,165 @@
 
 <template>
-  <el-table-column :prop="columnOption.prop"
-                   :key="columnOption.prop"
-                   :label="columnOption.label"
-                   filter-placement="bottom-end"
-                   v-if="getColumnProp(columnOption,'hide')"
-                   :filters="getColumnProp(columnOption,'filters')"
-                   :filter-method="getColumnProp(columnOption,'filterMethod')?handleFilterMethod:undefined"
-                   :filter-multiple="vaildData(columnOption.filterMultiple,true)"
-                   :show-overflow-tooltip="columnOption.overHidden"
+  <el-table-column :label="columnOption.label"
                    :min-width="columnOption.minWidth"
-                   :sortable="getColumnProp(columnOption,'sortable')"
+                   :width="columnOption.width"
                    :render-header="columnOption.renderHeader"
                    :align="columnOption.align || crud.tableOption.align"
                    :header-align="columnOption.headerAlign || crud.tableOption.headerAlign"
-                   :width="getColumnProp(columnOption,'width')"
-                   :fixed="getColumnProp(columnOption,'fixed')">
+                   :prop="columnOption.prop">
     <template v-for="column in columnOption.children">
-      <column-dynamic v-if="column.children && column.children.length>0"
+      <column-dynamic v-if="column.children && column.children.length"
                       :key="column.label"
                       :columnOption="column">
         <template v-for="item in crud.mainSlot"
                   slot-scope="scope"
-                  :slot="item">
+                  :slot="item.prop">
           <slot v-bind="scope"
-                :name="item"></slot>
+                :name="item.prop"></slot>
         </template>
-      </column-dynamic>
-      <column-slot v-else
-                   :column="column"
-                   :column-option="columnOption.children">
+        <template v-for="item in crud.headerSlot"
+                  slot-scope="scope"
+                  :slot="crud.getSlotName(item,'H')">
+          <slot v-bind="scope"
+                :name="crud.getSlotName(item,'H')"></slot>
+        </template>
         <template v-for="item in crud.mainSlot"
                   slot-scope="scope"
-                  :slot="item">
+                  :slot="crud.getSlotName(item,'F')">
           <slot v-bind="scope"
-                :name="item"></slot>
+                :name="crud.getSlotName(item,'F')"></slot>
         </template>
-      </column-slot>
+      </column-dynamic>
+      <template v-else-if="!['dynamic'].includes(column.type)">
+        <el-table-column v-if="vaildColumn(column)"
+                         :key="column.prop"
+                         :prop="column.prop"
+                         :label="column.label"
+                         filter-placement="bottom-end"
+                         :filters="getColumnProp(column,'filters')"
+                         :filter-method="crud.default[column.prop].filters?handleFiltersMethod:undefined"
+                         :filter-multiple="vaildData(column.filterMultiple,true)"
+                         :show-overflow-tooltip="column.overHidden"
+                         :min-width="column.minWidth"
+                         :sortable="getColumnProp(column,'sortable')"
+                         :render-header="column.renderHeader"
+                         :align="column.align || crud.tableOption.align"
+                         :header-align="column.headerAlign || crud.tableOption.headerAlign"
+                         :width="getColumnProp(column,'width')"
+                         :fixed="getColumnProp(column,'fixed')">
+          <template slot="header"
+                    slot-scope="scope">
+            <slot :name="crud.getSlotName(column,'H')"
+                  v-if="crud.$scopedSlots[crud.getSlotName(column,'H')]"
+                  v-bind="Object.assign(scope,{column})"></slot>
+            <el-popover placement="bottom"
+                        v-else
+                        :disabled="crud.default[column.prop].screen!==true"
+                        trigger="hover">
+              <el-input type="text"
+                        :placeholder="`请输入 ${column.label} 筛选关键字`"
+                        v-model="crud.default[column.prop].screenValue"
+                        size="mini"></el-input>
+              <span slot="reference">{{column.label}}</span>
+            </el-popover>
+          </template>
+          <template slot-scope="{row,$index}">
+            <el-form-item :prop="crud.isTree?'':`list.${$index}.${column.prop}`"
+                          v-if="row.$cellEdit && column.cell"
+                          :label="vaildLabel(column,row,' ')"
+                          :label-width="vaildLabel(column,row,'1px')"
+                          :rules='column.rules'>
+              <slot v-bind="{
+                      row:row,
+                      dic:crud.DIC[column.prop],
+                      size:crud.isMediumSize,
+                      index:$index,
+                      disabled:crud.btnDisabledList[$index],
+                      label:handleShowLabel(row,column,crud.DIC[column.prop]),
+                      '$cell':row.$cellEdit
+                    }"
+                    :name="crud.getSlotName(column,'F')"
+                    v-if="crud.$scopedSlots[crud.getSlotName(column,'F')]"></slot>
+              <form-temp v-else
+                         :column="column"
+                         :size="crud.isMediumSize"
+                         :dic="(crud.cascaderDIC[$index] || {})[column.prop] || crud.DIC[column.prop]"
+                         :props="column.props || crud.tableOption.props"
+                         :readonly="column.readonly"
+                         :disabled="crud.disabled || crud.tableOption.disabled || column.disabled || crud.btnDisabledList[$index]"
+                         :clearable="vaildData(column.clearable,false)"
+                         v-bind="$uploadFun(column,crud)"
+                         v-model="row[column.prop]"
+                         @change="columnChange(index,row,column)">
+              </form-temp>
+            </el-form-item>
+            <slot :row="row"
+                  :index="$index"
+                  :dic="crud.DIC[column.prop]"
+                  :size="crud.isMediumSize"
+                  :label="handleShowLabel(row,column,crud.DIC[column.prop])"
+                  :name="column.prop"
+                  v-else-if="crud.$scopedSlots[column.prop]"></slot>
+            <template v-else>
+              <span v-if="['img','upload'].includes(column.type)">
+                <div class="avue-crud__img">
+                  <img v-for="(item,index) in getImgList(row,column) "
+                       :src="item"
+                       :key="index"
+                       @click="openImg(getImgList(row,column),index)" />
+                </div>
+              </span>
+              <span v-else-if="['url'].includes(column.type)">
+                <el-link v-for="(item,index) in corArray(row[column.prop],column.separator)"
+                         type="primary"
+                         :key="index"
+                         :href="item"
+                         :target="column.target || '_blank'">{{item}}</el-link>
+              </span>
+              <span v-else-if="['rate'].includes(column.type)">
+                <avue-rate disabled
+                           v-model="row[column.prop]" />
+              </span>
+              <span v-else
+                    v-html="handleDetail(row,column)"></span>
+            </template>
+          </template>
+        </el-table-column>
+      </template>
+
     </template>
   </el-table-column>
 </template>
 
 <script>
-import columnSlot from './column-slot'
+import formTemp from '../../core/components/form/index'
 export default {
   name: 'column-dynamic',
   components: {
-    columnSlot
+    formTemp
   },
   inject: ["dynamic", 'crud'],
   props: {
-    columnOption: Object
+    t: Function,
+    columnOption: {
+      type: Object,
+      required: true
+    }
   },
   created () {
     const list = [
       'getColumnProp',
-      "handleFilterMethod",
+      "corArray",
+      "openImg",
+      "detailData",
+      "vaildLabel",
+      "vaildColumn",
+      "handleDetail",
+      "handleShowLabel",
+      "handleChange",
+      "columnChange",
+      "getImgList",
+      "handleFiltersMethod",
       "handleFilters"
     ];
     Object.keys(this.dynamic).forEach(ele => {

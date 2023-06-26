@@ -2,55 +2,49 @@
   <div :class="b()">
     <div :class="b('filter')"
          v-if="vaildData(option.filter,true)">
-      <el-input :placeholder="vaildData(option.filterText,t('tip.input'))"
+      <el-input :placeholder="vaildData(option.filterText,'输入关键字进行过滤')"
                 :size="size"
                 v-model="filterValue">
-
+        <el-button slot="append"
+                   :size="size"
+                   @click="parentAdd"
+                   icon="el-icon-plus"
+                   v-if="vaildData(option.addBtn,true)&&!$slots.addBtn"></el-button>
+        <slot v-else
+              name="addBtn"
+              slot="append"></slot>
       </el-input>
-      <el-button v-permission="getPermission('addBtn')"
-                 :size="size"
-                 @click="parentAdd"
-                 icon="el-icon-plus"
-                 v-if="vaildData(option.addBtn,true)"></el-button>
-      <slot v-else
-            v-permission="getPermission('addBtn')"
-            name="addBtn"></slot>
     </div>
-    <el-scrollbar :class="b('content')">
-      <el-tree ref="tree"
-               :data="data"
-               :lazy="lazy"
-               :load="treeLoad"
-               :props="treeProps"
-               :icon-class="iconClass"
-               :indent="indent"
-               :highlight-current="!multiple"
-               :show-checkbox="multiple"
-               :accordion="accordion"
-               :node-key="valueKey"
-               :check-strictly="checkStrictly"
-               :check-on-click-node="checkOnClickNode"
-               :filter-node-method="filterNode"
-               v-loading="loading"
-               :expand-on-click-node="expandOnClickNode"
-               @check-change="handleCheckChange"
-               @node-click="nodeClick"
-               @node-contextmenu="nodeContextmenu"
-               :default-expand-all="defaultExpandAll"
-               :default-expanded-keys="defaultExpandedKeys">
-
-        <slot slot-scope="{ node, data }"
-              :node="node"
-              v-if="$scopedSlots.default"
+    <el-tree ref="tree"
+             :data="data"
+             :lazy="lazy"
+             :load="treeLoad"
+             :props="treeProps"
+             :icon-class="iconClass"
+             :highlight-current="!multiple"
+             :show-checkbox="multiple"
+             :accordion="accordion"
+             :node-key="props.value"
+             :check-strictly="checkStrictly"
+             :filter-node-method="filterNode"
+             v-loading="loading"
+             :expand-on-click-node="expandOnClickNode"
+             @check-change="handleCheckChange"
+             @node-click="nodeClick"
+             @node-contextmenu="nodeContextmenu"
+             :default-expand-all="defaultExpandAll"
+             :default-expanded-keys="defaultExpandedKeys">
+      <span slot-scope="{ node, data }"
+            v-if="$scopedSlots.default">
+        <slot :node="node"
               :data="data"></slot>
-
-        <span class="el-tree-node__label"
-              slot-scope="{node}"
-              v-else>
-          <span>{{node.label}}</span>
-        </span>
-      </el-tree>
-    </el-scrollbar>
+      </span>
+      <span class="el-tree-node__label"
+            slot-scope="{node}"
+            v-else>
+        <span>{{node.label}}</span>
+      </span>
+    </el-tree>
     <div class="el-cascader-panel is-bordered"
          v-if="client.show&&menu"
          @click="client.show=false"
@@ -59,41 +53,40 @@
       <div :class="b('item')"
            v-if="vaildData(option.addBtn,true)"
            v-permission="getPermission('addBtn')"
-           @click="rowAdd">{{menuIcon('addBtn')}}</div>
+           @click="rowAdd">新增</div>
       <div :class="b('item')"
            v-if="vaildData(option.editBtn,true)"
            v-permission="getPermission('editBtn')"
-           @click="rowEdit">{{menuIcon('editBtn')}}</div>
+           @click="rowEdit">修改</div>
       <div :class="b('item')"
            v-if="vaildData(option.delBtn,true)"
            v-permission="getPermission('delBtn')"
-           @click="rowRemove">{{menuIcon('delBtn')}}</div>
+           @click="rowRemove">删除</div>
       <slot name="menu"
             :node="node"></slot>
     </div>
-    <div v-if="box">
-      <el-dialog :title="node[labelKey] || title"
-                 :visible.sync="box"
-                 :class="b('dialog')"
-                 class="avue-dialog avue-dialog--none"
-                 :modal-append-to-body="$AVUE.modalAppendToBody"
-                 :append-to-body="$AVUE.appendToBody"
-                 :before-close="hide"
-                 :width="vaildData(option.dialogWidth,'50%')">
-        <avue-form v-model="form"
-                   :option="formOption"
-                   ref="form"
-                   @submit="handleSubmit"></avue-form>
-      </el-dialog>
-    </div>
+    <el-dialog :title="node[labelKey] || title"
+               :visible.sync="box"
+               :class="b('dialog')"
+               class="avue-dialog"
+               modal-append-to-body
+               append-to-body
+               @close="hide"
+               :width="vaildData(option.dialogWidth,'50%')">
+      <avue-form v-model="form"
+                 :option="formOption"
+                 ref="form"
+                 @submit="handleSubmit"></avue-form>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
 import { DIC_PROPS } from 'global/variable';
-import locale from "core/locale";
+import locale from "../../core/common/locale";
 import create from "core/create";
-import permission from 'common/directive/permission';
+import permission from '../../core/directive/permission';
 export default create({
   name: "tree",
   mixins: [locale],
@@ -101,11 +94,6 @@ export default create({
     permission
   },
   props: {
-    indent: Number,
-    filterNodeMethod: Function,
-    checkOnClickNode: Boolean,
-    beforeClose: Function,
-    beforeOpen: Function,
     permission: {
       type: [Function, Object],
       default: () => {
@@ -153,7 +141,8 @@ export default create({
       box: false,
       type: "",
       node: {},
-      form: {}
+      obj: {},
+      form: {},
     };
   },
   computed: {
@@ -172,7 +161,7 @@ export default create({
       return this.vaildData(this.option.menu, true)
     },
     title () {
-      return this.option.title || this.t(`crud.addTitle`)
+      return this.option.title
     },
     treeLoad () {
       return this.option.treeLoad
@@ -190,7 +179,7 @@ export default create({
       return this.option.lazy
     },
     addText () {
-      return this.addFlag ? this.menuIcon('addBtn') : this.menuIcon('updateBtn');
+      return this.addFlag ? this.t("crud.addBtn") : this.t("crud.editBtn");
     },
     addFlag () {
       return ["add", "parentAdd"].includes(this.type);
@@ -222,12 +211,26 @@ export default create({
     defaultExpandedKeys () {
       return this.option.defaultExpandedKeys;
     },
+    formColumnOption () {
+      return (this.option.formOption || {}).column || [];
+    },
     formOption () {
       return Object.assign(
-        this.option.formOption || {},
         {
           submitText: this.addText,
-        }
+          column: [{
+            label: this.valueKey,
+            prop: this.valueKey,
+            display: false
+          },
+          ...this.formColumnOption
+          ]
+        },
+        (() => {
+          let option = this.option.formOption || {};
+          delete option.column;
+          return option;
+        })()
       );
     }
   },
@@ -246,16 +249,12 @@ export default create({
     },
     form (val) {
       this.$emit("input", val);
-      this.$emit("change", val);
     }
   },
   methods: {
-    menuIcon (value) {
-      return this.vaildData(this.option[value + 'Text'], this.t("crud." + value))
-    },
     getPermission (key) {
       if (typeof this.permission === "function") {
-        return this.permission(key, this.node.data || {})
+        return this.permission(key, this.node)
       } else if (!this.validatenull(this.permission[key])) {
         return this.permission[key]
       } else {
@@ -271,8 +270,8 @@ export default create({
         this[ele] = this.$refs.tree[ele];
       })
     },
-    nodeContextmenu (e, data, node) {
-      this.node = node;
+    nodeContextmenu (e, data) {
+      this.node = this.deepClone(data);
       this.client.x = e.clientX;
       this.client.y = e.clientY;
       this.client.show = true;
@@ -284,34 +283,23 @@ export default create({
       this.addFlag ? this.save(form, done) : this.update(form, done)
     },
     nodeClick (data, node, nodeComp) {
-      this.client.show = false
       this.$emit("node-click", data, node, nodeComp);
     },
     filterNode (value, data) {
-      if (typeof this.filterNodeMethod === 'function') {
-        return this.filterNodeMethod(value, data);
-      }
       if (!value) return true;
       return data[this.labelKey].indexOf(value) !== -1;
     },
-    hide (done) {
-      const callback = () => {
-        done && done()
-        this.node = {};
-        this.form = {}
-        this.box = false;
-      }
-      if (typeof this.beforeClose === "function") {
-        this.beforeClose(callback, this.type);
-      } else {
-        callback();
-      }
+    hide () {
+      this.box = false;
+      this.node = {};
+      this.$refs.form.resetForm();
+      this.$refs.form.clearValidate();
     },
     save (data, done) {
-      const callback = (form) => {
-        form = form || this.form;
+      const callback = () => {
+        let form = this.deepClone(this.form);
         if (this.type === "add") {
-          this.$refs.tree.append(form, this.node.data[this.valueKey])
+          this.$refs.tree.append(form, this.node[this.valueKey])
         } else if (this.type === "parentAdd") {
           this.$refs.tree.append(form)
         }
@@ -321,16 +309,10 @@ export default create({
       this.$emit("save", this.node, data, callback, done);
     },
     update (data, done) {
-      const callback = (form) => {
-        form = form || this.form;
-        const rowKey = form[this.valueKey]
-        this.node.data = this.form
-        let { parentList, index } = this.findData(rowKey)
-        if (parentList) {
-          const oldRow = parentList.splice(index, 1)[0];
-          form[this.childrenKey] = oldRow[this.childrenKey]
-          parentList.splice(index, 0, form)
-        }
+      const callback = () => {
+        let node = this.$refs.tree.getNode(this.node[this.valueKey]);
+        let form = this.deepClone(this.form);
+        node.data = form
         this.hide();
         done()
       };
@@ -338,7 +320,7 @@ export default create({
     },
     rowEdit (a) {
       this.type = "edit";
-      this.form = this.node.data;
+      this.form = this.node;
       this.show();
     },
     parentAdd () {
@@ -350,43 +332,16 @@ export default create({
       this.show();
     },
     show () {
-      const callback = () => {
-        this.client.show = false;
-        this.box = true;
-      }
-      if (typeof this.beforeOpen === "function") {
-        this.beforeOpen(callback, this.type);
-      } else {
-        callback();
-      }
+      this.client.show = false;
+      this.box = true;
     },
     rowRemove () {
       this.client.show = false;
       const callback = () => {
-        this.$refs.tree.remove(this.node.data[this.valueKey])
+        this.$refs.tree.remove(this.node[this.valueKey])
       }
       this.$emit("del", this.node, callback);
-    },
-    findData (id) {
-      let result = {}
-      const callback = (parentList, parent) => {
-        parentList.forEach((ele, index) => {
-          if (ele[this.valueKey] == id) {
-            result = {
-              item: ele,
-              index: index,
-              parentList: parentList,
-              parent: parent
-            }
-          }
-          if (ele[this.childrenKey]) {
-            callback(ele[this.childrenKey], ele)
-          }
-        })
-      }
-      callback(this.data)
-      return result;
-    },
+    }
   }
 });
 </script>

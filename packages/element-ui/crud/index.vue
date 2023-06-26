@@ -4,7 +4,8 @@
                :style="tableOption.titleStyle"
                v-if="tableOption.title">{{tableOption.title}}</component>
     <!-- 搜索组件 -->
-    <header-search ref="headerSearch">
+    <header-search :search="search"
+                   ref="headerSearch">
       <template slot="search"
                 slot-scope="scope">
         <slot name="search"
@@ -17,24 +18,20 @@
       </template>
       <template slot-scope="scope"
                 v-for="item in searchSlot"
-                :slot="item">
+                :slot="item.prop">
         <slot v-bind="scope"
-              :name="item"></slot>
+              :name="getSlotName(item,'S')"></slot>
       </template>
     </header-search>
     <el-card :shadow="isCard">
       <!-- 表格功能列 -->
       <header-menu ref="headerMenu"
                    v-if="vaildData(tableOption.header,true)">
-        <template slot="menuLeft"
-                  slot-scope="scope">
-          <slot name="menuLeft"
-                v-bind="scope"></slot>
+        <template slot="menuLeft">
+          <slot name="menuLeft"></slot>
         </template>
-        <template slot="menuRight"
-                  slot-scope="scope">
-          <slot name="menuRight"
-                v-bind="scope"></slot>
+        <template slot="menuRight">
+          <slot name="menuRight"></slot>
         </template>
       </header-menu>
       <el-tag class="avue-crud__tip"
@@ -46,19 +43,17 @@
         </span>
         <el-button type="text"
                    size="small"
-                   @click="clearSelection"
+                   @click="selectClear"
                    v-permission="getPermission('selectClearBtn')"
                    v-if="vaildData(tableOption.selectClearBtn,config.selectClearBtn) && tableOption.selection">{{t('crud.emptyBtn')}}</el-button>
         <slot name="tip"></slot>
       </el-tag>
       <slot name="header"></slot>
       <el-form :model="cellForm"
-               :show-message="false"
-               @validate="handleValidate"
                ref="cellForm">
-        <el-table :key="reload"
+        <el-table v-if="reload"
                   :data="cellForm.list"
-                  :row-key="rowKey"
+                  :row-key="handleGetRowKeys"
                   :class="{'avue-crud--indeterminate':vaildData(tableOption.indeterminate,false)}"
                   :size="$AVUE.tableSize || controlSize"
                   :lazy="vaildData(tableOption.lazy,false)"
@@ -89,6 +84,9 @@
                   :cell-class-name="cellClassName"
                   :row-style="rowStyle"
                   :cell-style="cellStyle"
+                  :sort-method="sortMethod"
+                  :sort-orders="sortOrders"
+                  :sort-by="sortBy"
                   :fit="tableOption.fit"
                   :header-cell-class-name="headerCellClassName"
                   :max-height="isAutoHeight?tableHeight:tableOption.maxHeight"
@@ -102,17 +100,21 @@
                   @select="select"
                   @select-all="selectAll"
                   @sort-change="sortChange">
+          <!-- 暂无数据提醒 -->
           <template slot="empty">
             <div :class="b('empty')">
               <slot name="empty"
                     v-if="$slots.empty"></slot>
-              <el-empty v-else
-                        :image-size="100"
-                        :description="tableOption.emptyText"></el-empty>
+              <avue-empty v-else
+                          size="50"
+                          image="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAxKSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgIDxlbGxpcHNlIGZpbGw9IiNGNUY1RjUiIGN4PSIzMiIgY3k9IjMzIiByeD0iMzIiIHJ5PSI3Ii8+CiAgICA8ZyBmaWxsLXJ1bGU9Im5vbnplcm8iIHN0cm9rZT0iI0Q5RDlEOSI+CiAgICAgIDxwYXRoIGQ9Ik01NSAxMi43Nkw0NC44NTQgMS4yNThDNDQuMzY3LjQ3NCA0My42NTYgMCA0Mi45MDcgMEgyMS4wOTNjLS43NDkgMC0xLjQ2LjQ3NC0xLjk0NyAxLjI1N0w5IDEyLjc2MVYyMmg0NnYtOS4yNHoiLz4KICAgICAgPHBhdGggZD0iTTQxLjYxMyAxNS45MzFjMC0xLjYwNS45OTQtMi45MyAyLjIyNy0yLjkzMUg1NXYxOC4xMzdDNTUgMzMuMjYgNTMuNjggMzUgNTIuMDUgMzVoLTQwLjFDMTAuMzIgMzUgOSAzMy4yNTkgOSAzMS4xMzdWMTNoMTEuMTZjMS4yMzMgMCAyLjIyNyAxLjMyMyAyLjIyNyAyLjkyOHYuMDIyYzAgMS42MDUgMS4wMDUgMi45MDEgMi4yMzcgMi45MDFoMTQuNzUyYzEuMjMyIDAgMi4yMzctMS4zMDggMi4yMzctMi45MTN2LS4wMDd6IiBmaWxsPSIjRkFGQUZBIi8+CiAgICA8L2c+CiAgPC9nPgo8L3N2Zz4K"
+                          :desc="tableOption.emptyText || '暂无数据'"></avue-empty>
             </div>
           </template>
-          <column :columnOption="columnOption">
+          <column :columnOption="columnOption"
+                  :tableOption="tableOption">
             <column-default ref="columnDefault"
+                            :tableOption="tableOption"
                             slot="header">
               <template slot-scope="{row,index}"
                         slot="expand">
@@ -123,16 +125,24 @@
             </column-default>
             <template v-for="item in mainSlot"
                       slot-scope="scope"
-                      :slot="item">
+                      :slot="item.prop">
               <slot v-bind="scope"
-                    :name="item"></slot>
+                    :name="item.prop"></slot>
             </template>
-            <column-menu slot="footer">
-              <template slot="menuHeader"
-                        slot-scope="scope">
-                <slot name="menuHeader"
-                      v-bind="scope"></slot>
-              </template>
+            <template v-for="item in headerSlot"
+                      slot-scope="scope"
+                      :slot="getSlotName(item,'H')">
+              <slot v-bind="scope"
+                    :name="getSlotName(item,'H')"></slot>
+            </template>
+            <template v-for="item in formSlot"
+                      slot-scope="scope"
+                      :slot="getSlotName(item,'F')">
+              <slot v-bind="scope"
+                    :name="getSlotName(item,'F')"></slot>
+            </template>
+            <column-menu :tableOption="tableOption"
+                         slot="footer">
               <template slot="menu"
                         slot-scope="scope">
                 <slot name="menu"
@@ -148,21 +158,53 @@
         </el-table>
       </el-form>
       <slot name="footer"></slot>
+      <!-- 分页 -->
+      <table-page ref="tablePage"
+                  v-if="vaildData(tableOption.page,true)"
+                  :page="page">
+        <template slot="page">
+          <slot name="page"></slot>
+        </template>
+      </table-page>
     </el-card>
-    <!-- 分页 -->
-    <table-page ref="tablePage">
-      <template slot="page">
-        <slot name="page"></slot>
-      </template>
-    </table-page>
-
     <!-- 表单 -->
-    <dialog-form ref="dialogForm">
+    <dialog-form ref="dialogForm"
+                 v-model="tableForm">
       <template slot-scope="scope"
                 v-for="item in formSlot"
-                :slot="item">
-        <slot v-bind="scope"
-              :name="item"></slot>
+                :slot="item.prop">
+        <slot v-bind="Object.assign(scope,{
+              row:item.dynamic?scope.row:tableForm,
+              index:item.dynamic?scope.row.$index:tableIndex
+              })"
+              :name="getSlotName(item,'F')"></slot>
+      </template>
+      <template slot-scope="scope"
+                v-for="item in labelSlot"
+                :slot="getSlotName(item,'L')">
+        <slot v-bind="Object.assign(scope,{
+              row:tableForm,
+              index:tableIndex
+              })"
+              :name="getSlotName(item,'L')"></slot>
+      </template>
+      <template slot-scope="scope"
+                v-for="item in errorSlot"
+                :slot="getSlotName(item,'E')">
+        <slot v-bind="Object.assign(scope,{
+              row:tableForm,
+              index:tableIndex
+              })"
+              :name="getSlotName(item,'E')"></slot>
+      </template>
+      <template slot-scope="scope"
+                v-for="item in typeSlot"
+                :slot="getSlotName(item,'T')">
+        <slot v-bind="Object.assign(scope,{
+              row:tableForm,
+              index:tableIndex
+              })"
+              :name="getSlotName(item,'T')"></slot>
       </template>
       <template slot-scope="scope"
                 slot="menuForm">
@@ -170,30 +212,32 @@
               v-bind="scope"></slot>
       </template>
     </dialog-form>
+    <!-- 动态列 -->
     <dialog-column ref="dialogColumn"></dialog-column>
-    <dialog-excel ref="dialogExcel"></dialog-excel>
-    <dialog-filter ref="dialogFilter"></dialog-filter>
+    <!-- 过滤器 -->
+    <keep-alive>
+      <dialog-filter ref="dialogFilter"></dialog-filter>
+    </keep-alive>
   </div>
 </template>
 <script>
 import create from "core/create";
 import packages from "core/packages";
-import permission from 'common/directive/permission';
-import init from "common/common/init.js";
+import permission from '../../core/directive/permission';
+import init from "../../core/common/init.js";
 import tablePage from "./table-page";
 import headerSearch from "./header-search";
-import locale from "core/locale";
+import locale from "../../core/common/locale";
 import column from "./column";
 import headerMenu from "./header-menu";
 import dialogColumn from "./dialog-column";
 import dialogFilter from "./dialog-filter";
 import dialogForm from "./dialog-form";
-import dialogExcel from './dialog-excel'
 import columnMenu from './column-menu'
 import columnDefault from './column-default'
 import config from "./config.js";
+import treeToArray, { addAttrs } from "./eval";
 import { calcCascader, formInitVal } from "core/dataformat";
-import { DIC_PROPS } from 'global/variable';
 export default create({
   name: "crud",
   mixins: [init(), locale,],
@@ -214,105 +258,113 @@ export default create({
     headerMenu, //菜单头部
     dialogColumn, //显隐列
     dialogFilter, //过滤器
-    dialogExcel,//导出数据
     dialogForm //分页,
   },
   data () {
     return {
-      reload: Math.random(),
-      cellForm: {
-        list: []
-      },
+      reload: true,
+      isChild: false,
       config: config,
       list: [],
-      listError: {},
       tableForm: {},
       tableHeight: undefined,
       tableIndex: -1,
       tableSelect: [],
-      sumsList: {},
-      cascaderIndexList: [],
+      formIndexList: [],
+      sumsList: [],
       cascaderDicList: {},
-      cascaderFormList: {},
+      formCascaderList: {},
       btnDisabledList: {},
       btnDisabled: false,
-      default: {}
-
+      defaultColumn: config.defaultColumn,
+      default: {},
     };
   },
-  mounted () {
+  created () {
+    // 初始化数据
     this.dataInit();
-    this.getTableHeight();
-    this.refreshTable()
+    // 初始化列
+    this.columnInit();
+  },
+  mounted () {
+    this.refreshTable(() => {
+      //如果有搜索激活搜索
+      this.$refs.headerSearch.init();
+      //动态计算表格高度
+      this.getTableHeight();
+    })
   },
   computed: {
-    isHeightAuto () {
-      return this.tableOption.height == 'auto'
-    },
-    isSortable () {
-      return this.tableOption.sortable;
-    },
-    isRowSort () {
-      return this.tableOption.rowSort;
-    },
-    isColumnSort () {
-      return this.tableOption.columnSort;
-    },
-    rowParentKey () {
-      return this.option.rowParentKey || DIC_PROPS.rowParentKey
-    },
-    childrenKey () {
-      return this.treeProps.children || DIC_PROPS.children
-    },
-    hasChildrenKey () {
-      return this.treeProps.hasChildren || DIC_PROPS.hasChildren
-    },
     treeProps () {
       return this.tableOption.treeProps || {}
     },
     isAutoHeight () {
       return this.tableOption.height === "auto"
     },
+    cellForm () {
+      let list = this.list
+      list = list.filter(ele => {
+        let result = [];
+        for (var o in this.default) {
+          if (!this.validatenull(this.default[o].screenValue)) {
+            result.push(ele[o].indexOf(this.default[o].screenValue) !== -1);
+          }
+        }
+        if (this.validatenull(result)) {
+          return true;
+        }
+        return eval(result.join('&&'));
+      })
+      return {
+        list: list
+      }
+    },
     formSlot () {
-      return this.getSlotList(['Error', 'Label', 'Type', 'Form'], this.$scopedSlots, this.propOption)
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Form`])
+    },
+    errorSlot () {
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Error`])
+    },
+    labelSlot () {
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Label`])
+    },
+    typeSlot () {
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Type`])
     },
     searchSlot () {
-      return this.getSlotList(['Search'], this.$scopedSlots, this.propOption)
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Search`])
+    },
+    headerSlot () {
+      return this.columnFormOption.filter(ele => this.$scopedSlots[`${ele.prop}Header`])
     },
     mainSlot () {
-      let result = [];
-      this.propOption.forEach(item => {
-        if (this.$scopedSlots[item.prop]) result.push(item.prop)
-      })
-      return this.getSlotList(['Header', 'Form'], this.$scopedSlots, this.propOption).concat(result)
+      return this.columnFormOption.filter(ele => this.$scopedSlots[ele.prop])
     },
     calcHeight () {
       return (this.tableOption.calcHeight || 0) + this.$AVUE.calcHeight
     },
     propOption () {
       let result = [];
-      function findProp (list = []) {
+      const safe = this;
+      function findProp (list) {
         if (!Array.isArray(list)) return
         list.forEach(ele => {
-          if (Array.isArray(ele.children)) findProp(ele.children);
-          else result.push(ele);
+          if (ele.prop || !ele.children) {
+            result.push(ele);
+          }
+          if (ele.children) {
+            safe.isChild = true;
+            findProp(ele.children);
+          }
         });
       }
       findProp(this.columnOption);
-      result = calcCascader(result);
+      if (this.isChild) {
+        result = calcCascader(result);
+      } else {
+        result = calcCascader(this.columnOption);
+      }
       return result;
-    },
-    isShowSummary () {
-      return this.option.showSummary
-    },
-    isHeader () {
-      let flag = false;
-      this.columnOption.forEach(ele => {
-        if (ele.children) {
-          flag = true;
-        }
-      })
-      return flag;
     },
     isTree () {
       let flag = false;
@@ -321,10 +373,44 @@ export default create({
           flag = true;
         }
       })
-      return flag
+      return this.vaildData(this.tableOption.tree, flag);
     },
     isCard () {
       return this.option.card ? 'always' : 'never'
+    },
+    isGroup () {
+      return !this.validatenull(this.tableOption.group);
+    },
+    groupOption () {
+      return this.parentOption.group;
+    },
+    dynamicOption () {
+      let list = [];
+      this.propOption.forEach(ele => {
+        if (ele.type === 'dynamic') {
+          list = list.concat(ele.children.column.map(item => {
+            return Object.assign(item, {
+              dynamic: true
+            })
+          }));
+        }
+      })
+      return list;
+    },
+    columnFormOption () {
+      let list = [];
+      this.propOption.forEach(column => {
+        list.push(column);
+      });
+      if (this.isGroup) {
+        this.groupOption.forEach(ele => {
+          if (!ele.column) return;
+          ele.column.forEach(column => {
+            list.push(column);
+          });
+        });
+      }
+      return list.concat(this.dynamicOption);
     },
     expandLevel () {
       return this.parentOption.expandLevel || 0;
@@ -332,12 +418,14 @@ export default create({
     expandAll () {
       return this.parentOption.expandAll || false;
     },
+    rowParentKey () {
+      return this.tableOption.rowParentKey || "parentId";
+    },
     parentOption () {
       return this.tableOption || {};
     },
     columnOption () {
-      let column = this.tableOption.column || []
-      return column
+      return this.tableOption.column || [];
     },
     sumColumnList () {
       return this.tableOption.sumColumnList || [];
@@ -347,27 +435,36 @@ export default create({
     },
   },
   watch: {
-    value: {
-      handler () {
-        this.tableForm = this.value;
+    default: {
+      handler (val) {
+        this.$emit('update:defaults', val)
       },
-      immediate: true,
       deep: true
     },
-    list: {
+    tableForm: {
       handler () {
-        this.cellForm.list = this.list;
+        this.$emit("input", this.tableForm);
+      },
+      deep: true
+    },
+    value: {
+      handler () {
+        this.formVal();
       },
       deep: true
     },
     data: {
       handler () {
         this.dataInit();
+        this.handleLoadCascaderDic()
       },
       deep: true
-    }
+    },
   },
   props: {
+    sortBy: Function,
+    sortOrders: Array,
+    sortMethod: Function,
     spanMethod: Function,
     summaryMethod: Function,
     rowStyle: Function,
@@ -392,6 +489,12 @@ export default create({
     value: {
       type: Object,
       default: () => {
+        return {};
+      }
+    },
+    defaults: {
+      type: Object,
+      default () {
         return {};
       }
     },
@@ -424,11 +527,6 @@ export default create({
     }
   },
   methods: {
-    handleValidate (prop, valid, msg) {
-      if (!this.listError[prop]) this.$set(this.listError, prop, { valid: false, msg: '' })
-      this.listError[prop].valid = !valid
-      this.listError[prop].msg = msg
-    },
     getPermission (key, row, index) {
       if (typeof this.permission === "function") {
         return this.permission(key, row, index)
@@ -445,8 +543,8 @@ export default create({
           const tablePageRef = this.$refs.tablePage
           if (!tableRef) return
           const tableStyle = tableRef.$el;
-          const pageStyle = tablePageRef.$el.offsetHeight || 20;
-          this.tableHeight = document.documentElement.clientHeight - tableStyle.offsetTop - pageStyle - this.calcHeight
+          const pageStyle = tablePageRef ? tablePageRef.$el.offsetHeight : 0;
+          this.tableHeight = config.clientHeight - tableStyle.offsetTop - pageStyle - this.calcHeight
         })
       } else {
         this.tableHeight = this.tableOption.height;
@@ -456,8 +554,11 @@ export default create({
       this.$refs.table.doLayout()
     },
     refreshTable (callback) {
-      this.reload = Math.random()
+      this.reload = false;
       this.$nextTick(() => {
+        this.reload = true;
+        //是否开启表格排序
+        setTimeout(() => this.$refs.columnDefault.setSort())
         callback && callback()
       })
     },
@@ -468,23 +569,41 @@ export default create({
         resolve(data);
       })
     },
+    // 格式化数据源
+    formatData () {
+      const data = this.data;
+      if (data.length === 0) {
+        return [];
+      }
+      addAttrs(this, data, {
+        expand: this.expandAll,
+        expandLevel: this.expandLevel
+      });
+      this.list = treeToArray(this, data);
+    },
+    showRow (row) {
+      const index = row.rowIndex;
+      const show = row.row._parent
+        ? row.row._parent._expand && row.row._parent._show
+        : true;
+      row.row._show = show;
+      return show
+        ? "animation:treeTableShow 1s;-webkit-animation:treeTableShow 1s;"
+        : "display:none;";
+    },
     menuIcon (value) {
       return this.vaildData(this.tableOption[value + 'Text'], this.t("crud." + value))
-    },
-    getBtnIcon (value) {
-      const name = value + 'Icon';
-      return this.tableOption[name] || config[name]
     },
     //对部分表单字段进行校验的方法
     validateField (val) {
       return this.$refs.dialogForm.$refs.tableForm.validateField(val);
     },
-    clearSelection () {
-      this.$refs.table.clearSelection();
-      this.$emit('selection-clear', this.deepClone(this.tableSelect))
+    handleGetRowKeys (row) {
+      const rowKey = row[this.rowKey];
+      return rowKey;
     },
-    toggleAllSelection () {
-      this.$refs.table.toggleAllSelection();
+    selectClear () {
+      this.$refs.table.clearSelection();
     },
     toggleRowSelection (row, selected) {
       this.$refs.table.toggleRowSelection(row, selected);
@@ -495,31 +614,37 @@ export default create({
     setCurrentRow (row) {
       this.$refs.table.setCurrentRow(row);
     },
+    formVal () {
+      Object.keys(this.value).forEach(ele => {
+        this.$set(this.tableForm, ele, this.value[ele]);
+      });
+    },
+    columnInit () {
+      this.propOption.forEach(column => {
+        let obj = {}
+        this.defaultColumn.forEach(ele => obj[ele.prop] = column[ele.prop])
+        this.$set(this.default, column.prop, Object.assign(obj, { order: undefined, label: column.label, showColumn: column.showColumn }, this.defaults[column.prop]))
+        this.defaultColumn.forEach(ele => {
+          if (['hide', 'filters'].includes(ele.prop)) {
+            this.$watch(`default.${column.prop}.${ele.prop}`, () => this.refreshTable())
+          }
+        })
+      })
+    },
     dataInit () {
       this.list = this.data;
+      //初始化序列的参数
       this.list.forEach((ele, index) => {
-        if (ele.$cellEdit && !this.cascaderFormList[index]) {
-          this.cascaderFormList[index] = this.deepClone(ele);
+        if (ele.$cellEdit && !this.formCascaderList[index]) {
+          this.formCascaderList[index] = this.deepClone(ele);
         }
-        this.$set(ele, '$cellEdit', ele.$cellEdit || false);
-        this.$set(ele, '$index', index);
+        ele.$index = index;
       });
     },
     //拖动表头事件
     headerDragend (newWidth, oldWidth, column, event) {
-      let obj = this.objectOption[column.property];
-      if (obj) this.$set(this.objectOption[column.property], 'width', newWidth)
+      this.default[column.property].width = newWidth
       this.$emit("header-dragend", newWidth, oldWidth, column, event);
-    },
-    headerSort (oldIndex, newIndex) {
-      let column = this.columnOption;
-      let targetRow = column.splice(oldIndex, 1)[0]
-      column.splice(newIndex, 0, targetRow)
-      this.refreshTable()
-    },
-    // 清除过滤器执行函数
-    clearFilter (name) {
-      this.$refs.table.clearFilter(name);
     },
     //展开或则关闭
     expandChange (row, expand) {
@@ -604,6 +729,14 @@ export default create({
     cellDblclick (row, column, cell, event) {
       this.$emit("cell-dblclick", row, column, cell, event);
     },
+    //行编辑点击
+    rowCell (row, index) {
+      if (row.$cellEdit) {
+        this.rowCellUpdate(row, index);
+      } else {
+        this.rowCellEdit(row, index);
+      }
+    },
     //单元格新增
     rowCellAdd (row = {}) {
       let len = this.list.length
@@ -618,60 +751,34 @@ export default create({
           row
         ))
       this.list.push(row);
+      this.formIndexList.push(len);
+      setTimeout(() => this.$refs.columnDefault.setSort())
     },
     //行取消
     rowCancel (row, index) {
       if (this.validatenull(row[this.rowKey])) {
         this.list.splice(index, 1);
-        delete this.cascaderDIC[index]
-      } else {
-        this.cascaderFormList[index].$cellEdit = false;
-        this.$set(this.cascaderDIC, index, this.cascaderDicList[index]);
-        this.$set(this.list, index, this.cascaderFormList[index]);
+        return;
       }
-      delete this.cascaderDicList[index]
-      delete this.cascaderFormList[index]
-      this.cascaderIndexList.splice(this.cascaderIndexList.indexOf(index), 1);
-    },
-    //行编辑点击
-    rowCell (row, index) {
-      if (row.$cellEdit) {
-        this.rowCellUpdate(row, index);
-      } else {
-        this.rowCellEdit(row, index);
-      }
-    },
-    rowCellUpdate (row, index) {
-      row = this.deepClone(row);
-      var result = this.validateCellField(index)
-      const done = () => {
-        this.btnDisabledList[index] = false;
-        this.btnDisabled = false;
-        this.list[index].$cellEdit = false
-        this.cascaderIndexList.splice(this.cascaderIndexList.indexOf(index), 1);
-        delete this.cascaderFormList[index]
-      }
-      const loading = () => {
-        this.btnDisabledList[index] = false;
-        this.btnDisabled = false;
-      }
-      if (result) {
-        this.btnDisabledList[index] = true;
-        this.btnDisabled = true;
-        if (this.validatenull(row[this.rowKey])) {
-          this.$emit("row-save", row, done, loading);
-        } else {
-          this.$emit("row-update", row, index, done, loading);
-        }
-      }
+      this.formCascaderList[index].$cellEdit = false;
+      //设置行数据
+      this.$set(this.list, index, this.formCascaderList[index]);
+      delete this.formCascaderList[index]
+      //设置级联字典
+      this.$set(this.cascaderDIC, index, this.cascaderDicList[index]);
+      this.formIndexList.splice(this.formIndexList.indexOf(index), 1);
     },
     // 单元格编辑
     rowCellEdit (row, index) {
       row.$cellEdit = true;
+      this.$set(this.list, index, row);
       //缓冲行数据
-      this.cascaderFormList[index] = this.deepClone(row);
+      this.formCascaderList[index] = this.deepClone(row);
       //缓冲级联字典
       this.cascaderDicList[index] = this.deepClone(this.cascaderDIC[index]);
+      setTimeout(() => {
+        this.formIndexList.push(index);
+      }, 1000);
     },
     // 对部分表单字段进行校验
     validateCellForm (cb) {
@@ -695,6 +802,29 @@ export default create({
       }
       return result
     },
+    rowCellUpdate (row, index) {
+      var result = this.validateCellField(index)
+      if (result) {
+        this.btnDisabledList[index] = true;
+        this.btnDisabled = true;
+        this.$emit(
+          "row-update",
+          row,
+          index,
+          () => {
+            this.btnDisabledList[index] = false;
+            this.btnDisabled = false;
+            row.$cellEdit = false;
+            this.$set(this.list, index, row);
+            delete this.formCascaderList[index]
+          },
+          () => {
+            this.btnDisabledList[index] = false;
+            this.btnDisabled = false;
+          }
+        );
+      }
+    },
     rowAdd () {
       this.$refs.dialogForm.show("add");
     },
@@ -707,41 +837,80 @@ export default create({
     closeDialog () {
       return this.$refs.dialogForm.closeDialog()
     },
+    //对象克隆
+    rowClone (row) {
+      let rowData = {};
+      Object.keys(row).forEach(ele => {
+        if (!["_parent", "children"].includes(ele)) {
+          rowData[ele] = row[ele];
+        }
+      });
+      return rowData;
+    },
+    //搜索
+    searchChange () {
+      this.$refs.headerSearch.searchChange();
+    },
     getPropRef (prop) {
       return this.$refs.dialogForm.$refs.tableForm.getPropRef(prop);
     },
-    setVal () {
-      this.$emit("input", this.tableForm);
-      this.$emit("change", this.tableForm);
+    //清空
+    searchReset () {
+      this.$refs.headerSearch.searchReset();
     },
     // 编辑
     rowEdit (row, index) {
-      this.tableForm = this.deepClone(row);
+      this.tableForm = this.rowClone(row);
+      this.$emit("input", this.tableForm);
       this.tableIndex = index;
-      this.setVal()
-      this.$refs.dialogForm.show("edit");
+      this.$refs.dialogForm.show("edit", index);
     },
     //复制
     rowCopy (row) {
-      this.tableForm = this.deepClone(row);
+      this.tableForm = this.rowClone(row);
       delete this.tableForm[this.rowKey]
+      this.$emit("input", this.tableForm);
       this.tableIndex = -1;
-      this.setVal()
       this.$refs.dialogForm.show("add");
     },
     //查看
     rowView (row, index) {
-      this.tableForm = this.deepClone(row);
+      this.tableForm = this.rowClone(row);
+      this.$emit("input", this.tableForm);
       this.tableIndex = index;
-      this.setVal()
       this.$refs.dialogForm.show("view");
+    },
+    vaildParent (row) {
+      return this.validatenull(row[this.rowParentKey])
     },
     // 删除
     rowDel (row, index) {
       this.$emit("row-del", row, index, () => {
-        let { parentList, index } = this.findData(row[this.rowKey])
-        if (parentList) parentList.splice(index, 1);
+        const callback = (list = []) => {
+          let index = list.findIndex(ele => ele[this.rowKey] === row[this.rowKey])
+          list.splice(index, 1);
+        }
+        if (this.isTree) {
+          if (this.vaildParent(row)) {
+            callback(this.data)
+          } else {
+            let parent = this.findObject(this.data, row[this.rowParentKey], this.rowKey);
+            if (parent === undefined) {
+              callback(this.data)
+            } else {
+              callback(parent.children)
+            }
+          }
+        } else {
+          callback(this.data)
+        }
+
       });
+    },
+    //清空表单
+    resetForm () {
+      this.$refs.dialogForm.resetForm();
+      this.$emit("input", this.tableForm);
     },
     //合并行
     tableSpanMethod (param) {
@@ -749,16 +918,19 @@ export default create({
     },
     //合集统计逻辑
     tableSummaryMethod (param) {
-      let sumsList = {}
       //如果自己写逻辑则调用summaryMethod方法
       if (typeof this.summaryMethod === "function")
         return this.summaryMethod(param);
       const { columns, data } = param;
-      let sums = [];
+      const sums = [];
       if (columns.length > 0) {
         columns.forEach((column, index) => {
-          let currItem = this.sumColumnList.find(item => item.name === column.property);
-          if (currItem) {
+          let currItem = this.sumColumnList.find(
+            item => item.name === column.property
+          );
+          if (index === 0) {
+            sums[index] = ''
+          } else if (currItem) {
             let decimals = currItem.decimals || 2;
             let label = currItem.label || '';
             switch (currItem.type) {
@@ -791,55 +963,14 @@ export default create({
                 sums[index] = label + sums[index].toFixed(decimals);
                 break;
             }
-            sumsList[column.property] = sums[index]
           } else {
-            sums[index] = "";
+            sums[index] = "-";
           }
         });
       }
-      this.sumsList = sumsList;
+      this.sumsList = sums;
       return sums;
-    },
-    tableDrop (type, el, callback) {
-      if (this.isSortable !== true) {
-        if (type == 'row' && !this.isRowSort) {
-          return
-        } else if (type == 'column' && !this.isColumnSort) {
-          return
-        }
-      }
-      if (!window.Sortable) {
-        packages.logs("Sortable")
-        return
-      }
-      window.Sortable.create(el, {
-        ghostClass: config.ghostClass,
-        chosenClass: config.ghostClass,
-        animation: 500,
-        delay: 0,
-        onEnd: evt => callback(evt)
-      })
-    },
-    findData (id) {
-      let result = {}
-      const callback = (parentList, parent) => {
-        parentList.forEach((ele, index) => {
-          if (ele[this.rowKey] == id) {
-            result = {
-              item: ele,
-              index: index,
-              parentList: parentList,
-              parent: parent
-            }
-          }
-          if (ele[this.childrenKey]) {
-            callback(ele[this.childrenKey], ele)
-          }
-        })
-      }
-      callback(this.list)
-      return result;
-    },
+    }
   }
 });
 </script>

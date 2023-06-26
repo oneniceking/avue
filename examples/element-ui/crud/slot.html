@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -21,16 +21,7 @@
   <div id="app">
     <avue-crud :data="data" :option="option" v-model="user">
       <template slot-scope="scope" slot="nameForm">
-        <el-tag>{{scope}}</el-tag>
-      </template>
-      <template slot-scope="scope" slot="name">
-        <el-tag>{{scope}}</el-tag>
-      </template>
-      <template slot-scope="scope" slot="nameSearch">
-        <el-tag>{{scope}}</el-tag>
-      </template>
-      <template slot-scope="scope" slot="nameHeader">
-        <el-tag>{{scope}}</el-tag>
+        <el-tag>{{scope.row}}暂时没有内容</el-tag>
       </template>
       <template slot-scope="{}" slot="nameLabel">
         <span>姓名&nbsp;&nbsp;</span>
@@ -67,7 +58,9 @@
             {
               label: '姓名',
               prop: 'name',
-              search: true,
+              formslot: true,
+              labelslot: true,
+              errorslot: true,
               rules: [{
                 required: true,
                 message: "请输入姓名",
@@ -76,8 +69,7 @@
             },
             {
               label: '性别',
-              prop: 'sex',
-              search: true
+              prop: 'sex'
             }
           ]
         },

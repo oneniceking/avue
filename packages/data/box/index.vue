@@ -7,16 +7,16 @@
               v-for="(item,index) in data"
               :key="index">
         <div class="item">
-          <a :href="item.href"
-             @click="item.click&&item.click(item)"
+          <a :href="item.href?item.href:'javascript:void(0);'"
+             @click="item.click?item.click(item):''"
              :target="item.target">
             <div class="item-icon"
                  :style="{backgroundColor:item.color}">
               <i :class="item.icon"></i>
             </div>
             <div class="item-info">
-              <avue-count-up :animation="item.animation || animation"
-                             :decimals="item.decimals || decimals"
+              <avue-count-up :animation="animation"
+                             :decimals="decimals"
                              :style="{color:item.color}"
                              class="title"
                              :end="item.count"></avue-count-up>

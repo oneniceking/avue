@@ -11,11 +11,9 @@
              :readonly="readonly"
              :no-match-text="noMatchText"
              :no-data-text="noDataText"
-             :remote-method="remote?handleRemoteMethod:undefined"
-             :popper-class="popperClass"
-             :popper-append-to-body="popperAppendToBody"
+             :remote-method="handleRemoteMethod"
              :collapse-tags="tags"
-             :clearable="clearableVal"
+             :clearable="disabled?false:clearable"
              :placeholder="placeholder"
              @focus="handleFocus"
              @blur="handleBlur"
@@ -40,20 +38,13 @@
           </slot>
           <template v-else>
             <span>{{ getLabelText(citem) }}</span>
-            <span v-if="citem[descKey]"
-                  :class="b('desc')">{{ citem[descKey] }}</span>
+            <span v-if="citem.desc"
+                  :class="b('desc')">{{ citem.desc }}</span>
           </template>
         </el-option>
       </el-option-group>
     </template>
     <template v-else>
-      <el-checkbox v-if="all&&multiple"
-                   :class="b('check')"
-                   :value="checked"
-                   :checked="checked"
-                   :disabled="disabled"
-                   :indeterminate="indeterminate"
-                   @change='checkChange'>全选</el-checkbox>
       <el-option v-for="(item,index) in netDic"
                  :key="index"
                  :disabled="item[disabledKey]"
@@ -78,23 +69,21 @@
 <script>
 import packages from 'core/packages';
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 import { sendDic } from "core/dic";
-import { DIC_SPLIT } from 'global/variable';
 export default create({
   name: "select",
   mixins: [props(), event()],
   data () {
     return {
-      checked: false,
-      indeterminate: false,
       created: false,
       netDic: [],
       loading: false,
     };
   },
   props: {
+    value: {},
     loadingText: {
       type: String,
     },
@@ -131,34 +120,14 @@ export default create({
     defaultFirstOption: {
       type: Boolean,
       default: false
-    },
-    all: {
-      type: Boolean,
-      default: false
-    },
-    popperAppendToBody: {
-      type: Boolean,
-      default: true
     }
   },
   watch: {
-    text (val) {
+    value (val) {
       if (!this.validatenull(val)) {
         if (this.remote && !this.created) {
           this.created = true
-          this.handleRemoteMethod(this.multiple ? this.text.join(DIC_SPLIT) : this.text)
-        }
-      }
-      if (this.multiple) {
-        if (this.text.length == 0) {
-          this.checked = false
-          this.indeterminate = false
-        } else if (this.text.length == this.netDic.length) {
-          this.checked = true
-          this.indeterminate = false
-        } else {
-          this.checked = false
-          this.indeterminate = true
+          this.handleRemoteMethod(this.multiple ? this.text.join(',') : this.text)
         }
       }
     },
@@ -181,8 +150,13 @@ export default create({
         return
       }
       const el = this.$refs.main.$el.querySelectorAll('.el-select__tags > span')[0]
-      window.Sortable.create(el, {
-        animation: 100,
+      this.sortable = window.Sortable.create(el, {
+        ghostClass: 'sortable-ghost', // Class name for the drop placeholder,
+        setData: function (dataTransfer) {
+          dataTransfer.setData('Text', '')
+          // to avoid Firefox bug
+          // Detail see : https://github.com/RubaXa/Sortable/issues/1012
+        },
         onEnd: evt => {
           const targetRow = this.value.splice(evt.oldIndex, 1)[0]
           this.value.splice(evt.newIndex, 0, targetRow)
@@ -198,14 +172,6 @@ export default create({
         this.loading = false;
         this.netDic = res;
       });
-    },
-    checkChange (val) {
-      this.text = []
-      this.checked = val
-      this.indeterminate = false
-      if (val) {
-        this.text = this.netDic.map(ele => ele[this.valueKey])
-      }
     }
   }
 });

@@ -1,19 +1,20 @@
 
-import Vue from 'vue';
+import zh from './lang/zh';
+import en from './lang/en';;
+import deepmerge from 'deepmerge';
 import Format from './format';
-import defaultLang from './lang/zh'
-
+const Vue = window.Vue;
 const format = Format(Vue);
-let lang = defaultLang;
+let lang = zh;
 let merged = false;
 let i18nHandler = function () {
   const vuei18n = Object.getPrototypeOf(this || Vue || {}).$t;
-  if (typeof vuei18n === 'function' && !!Vue.locale) {
+  if (typeof vuei18n === 'function' && (Vue || {}).locale) {
     if (!merged) {
       merged = true;
       Vue.locale(
         Vue.config.lang,
-        Object.assign(lang, Vue.locale(Vue.config.lang) || {}, { clone: true })
+        deepmerge(lang, Vue.locale(Vue.config.lang) || {}, { clone: true })
       );
     }
     return vuei18n.apply(this, arguments);
@@ -37,12 +38,17 @@ export const t = function (path, options) {
   return '';
 };
 
+export const locale = {
+  zh,
+  en
+};
+
 export const use = function (l) {
-  lang = l || lang;
+  lang = locale[l || 'zh'];
 };
 
 export const i18n = function (fn) {
   i18nHandler = fn || i18nHandler;
 };
 
-export default { use, t, i18n };
+export default { use, t, i18n, locale };

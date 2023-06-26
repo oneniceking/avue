@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
   <script src="http://qtestbucket.qiniudn.com/demo/CryptoJS.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
@@ -23,6 +23,9 @@
     {{form}}
     <avue-form :option="option" v-model="form" :upload-error="uploadError" :upload-delete="uploadDelete"
       :upload-before="uploadBefore" :upload-exceed="uploadExceed" :upload-after="uploadAfter">
+      <template slot="imgUrlType" slot-scope="{file}">
+        {{file}}
+      </template>
     </avue-form>
   </div>
 </body>
@@ -32,10 +35,10 @@
     data() {
       return {
         form: {
-          imgUrl: [{ "label": "video", "value": "https://www.w3school.com.cn/i/movie.ogg" }, { "label": "avue@226d5c1a_logo.png", "value": "https://avuejs.com/images/logo-bg.jpg" }],
+          imgUrl: [{ "label": "avue@226d5c1a_logo.png", "value": "https://avuejs.com/images/logo-bg.jpg" }],
           imgUrl3: 'https://www.w3school.com.cn/i/movie.ogg',
           string: 'https://avuejs.com/images/logo-bg.jpg,/images/logo-bg.jpg',
-          img: ['https://www.w3school.com.cn/i/movie.ogg', 'https://avuejs.com/images/logo-bg.jpg']
+          img: ['https://avuejs.com/images/logo-bg.jpg', 'https://avuejs.com/images/logo-bg.jpg']
         },
         option: {
           labelWidth: 120,
@@ -45,7 +48,6 @@
               prop: 'imgUrl',
               type: 'upload',
               loadText: '附件上传中，请稍等',
-              fileText: '上传自定义',
               span: 24,
               accept: [],
               propsHttp: {
@@ -55,29 +57,23 @@
                 'Test': "test",
               },
               tip: '只能上传jpg/png文件，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avueupload.91eic.com/upload/list'
             },
             {
               label: '水印头像',
               prop: 'imgUrl3',
               type: 'upload',
               listType: 'picture-img',
-              dragFile: true,
               span: 24,
               propsHttp: {
                 res: 'data'
-              },
-              cropperOption: {
-                outputType: 'jpeg',
-                fixed: true,
-                fixedNumber: [346, 148]
               },
               canvasOption: {
                 text: 'avue',
                 ratio: 0.1
               },
               tip: '只能上传jpg/png用户头像，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avuejs.com/imgupload'
             },
             {
               label: '照片墙',
@@ -90,7 +86,7 @@
               propsHttp: {
                 res: 'data.0'
               },
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avueupload.91eic.com/upload/list'
             },
             {
               label: '数组图片组',
@@ -103,7 +99,7 @@
               span: 24,
               listType: 'picture-card',
               tip: '只能上传jpg/png文件，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avuejs.com/imgupload'
             },
             {
               label: '字符串图片组',
@@ -114,21 +110,20 @@
               },
               span: 24,
               listType: 'picture-card',
-              dragFile: true,
               tip: '只能上传jpg/png文件，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avueupload.91eic.com/upload/list'
             },
             {
               label: '拖拽上传',
               prop: 'imgUrl',
               type: 'upload',
               span: 24,
-              dragFile: true,
+              drag: true,
               propsHttp: {
                 res: 'data.0'
               },
               tip: '只能上传jpg/png文件，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avueupload.91eic.com/upload/list'
             },
             {
               label: '缩略图上传',
@@ -141,7 +136,7 @@
               },
               listType: 'picture',
               tip: '只能上传jpg/png文件，且不超过500kb',
-              action: 'https://api.avuejs.com/imgupload'
+              action: 'https://avueupload.91eic.com/upload/list'
             }
           ]
         }

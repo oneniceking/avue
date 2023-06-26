@@ -1,190 +1,194 @@
-import { detailDataType, getAsVal } from 'utils/util';
+import packages from 'core/packages';
 import { validatenull } from 'utils/validate';
-import { DIC_PROPS } from 'global/variable'
-const key = 'key';
-function getDataType (list = [], props = {}, type) {
-  let valueKey = props.value || DIC_PROPS.value;
-  let childrenKey = props.children || DIC_PROPS.children;
-  list.forEach(ele => {
-    ele[valueKey] = detailDataType(ele[valueKey], type);
-    if (ele[childrenKey]) getDataType(ele[childrenKey], props, type);
-  });
-  return list;
-};
+import { getObjValue, detailDic } from 'utils/util';
 
-function getResData (data, props, dataType) {
-  const bind = props.bind || ''
-  const list = bind.split('.');
-  let res;
-  if (list[0] === '') {
-    let result = data.data
-    if (result) {
-      res = Array.isArray(result) ? result : [result]
-    } else {
-      res = data
-    }
-  }
-  res = getAsVal(res, bind)
-  if (dataType) res = getDataType(res, props, dataType)
-  return res;
-};
-export const loadCascaderDic = (columnOption, safe) => {
-  return new Promise(resolve => {
-    let list = [];
-    let result = {};
-    let columnList = columnOption.filter(ele => ele.parentProp)
-    safe.data.forEach((ele, index) => {
-      if (!safe.cascaderDIC[index]) safe.$set(safe.cascaderDIC, index, {})
+export const loadCascaderDic = (columnOption, list) => {
+  return new Promise((resolve, reject) => {
+    let columnList = [];
+    let result = [];
+    let networkdic = {};
+    columnOption.forEach(ele => {
+      if (ele.parentProp) columnList.push(ele);
+    });
+    list.forEach((ele, index) => {
       columnList.forEach(column => {
         if (column.hide !== true && column.dicFlag !== false) {
-          list.push(new Promise(resolve => {
-            if (ele[column.parentProp]) {
-              sendDic({
-                url: column.dicUrl,
-                props: column.props,
-                method: column.dicMethod,
-                headers: column.dicHeaders,
-                formatter: column.dicFormatter,
-                query: column.dicQuery,
-                dataType: column.dataType,
-                form: ele,
-                value: ele[column.parentProp]
-              }).then(res => {
-                let obj = {
+          result.push(
+            new Promise(resolve => {
+              if (validatenull(ele[column.parentProp])) {
+                resolve({
                   prop: column.prop,
-                  data: res,
+                  data: [],
                   index: index
+                });
+              } else {
+                if (column.dicUrl) {
+                  sendDic(Object.assign({
+                    url: `${column.dicUrl.replace('{{key}}', ele[column.parentProp])}`
+                  }, {
+                    props: column.props,
+                    method: column.dicMethod,
+                    formatter: column.dicFormatter,
+                    query: column.dicQuery
+                  })).then(res => {
+                    resolve({
+                      prop: column.prop,
+                      data: res,
+                      index: index
+                    });
+                  });
                 }
-                safe.$set(safe.cascaderDIC[index], obj.prop, obj.data)
-                resolve(obj);
-              });
-            } else {
-              let obj = {
-                prop: column.prop,
-                data: [],
-                index: index
               }
-              safe.$set(safe.cascaderDIC[index], obj.prop, obj.data)
-              resolve(obj);
-            }
-          }));
+            })
+          );
         }
       });
     });
-    Promise.all(list).then(data => {
+    Promise.all(result).then(data => {
       data.forEach(ele => {
-        if (!result[ele.index]) result[ele.index] = {};
-        result[ele.index][ele.prop] = ele.data;
+        if (validatenull(networkdic[ele.index])) networkdic[ele.index] = {};
+        networkdic[ele.index][ele.prop] = ele.data;
       });
-      resolve(result);
+      resolve(networkdic);
     });
   });
 };
-export const loadDic = (option, safe) => {
-  return new Promise(resolve => {
-    let list = [], result = {};
-    let notList = [], nameList = [], column = option.column || [];
-    column.forEach(ele => {
-      let url = ele.dicUrl;
-      let prop = ele.prop;
-      let parentProp = ele.parentProp;
-      notList = notList.concat(ele.cascader || []);
-      let flag = ele.dicFlag === false || ele.lazy === true || notList.includes(prop);
-      if (url && !parentProp && !flag) {
-        list.push(new Promise(resolve => {
-          sendDic({
-            url: url,
-            name: prop,
-            method: ele.dicMethod,
-            headers: ele.dicHeaders,
-            formatter: ele.dicFormatter,
-            props: ele.props,
-            dataType: ele.dataType,
-            query: ele.dicQuery
-          }).then(res => {
-            safe.$set(safe.DIC, prop, res);
-            resolve(res)
-          });
-        }))
-      }
-    });
-    Promise.all(list).then(res => {
-      nameList.forEach((ele, index) => {
-        result[ele] = res[index];
+export const loadDic = (option) => {
+  let ajaxdic = []; // 发送ajax的字典
+  return new Promise((resolve, reject) => {
+    const params = createdDic(option);
+    ajaxdic = params.ajaxdic;
+    if (!window.axios && !validatenull(ajaxdic)) {
+      packages.logs('axios');
+      resolve();
+    }
+    handeDic(ajaxdic)
+      .then((res) => {
+        resolve(res);
+      })
+      .catch(err => {
+        reject(err);
       });
-      resolve(result);
-    });
   });
 };
-
-export const loadLocalDic = (option, safe) => {
-  let columnData = {};
-  let optionData = option.dicData || {};
+export const loadLocalDic = (option) => {
+  let locationdic = {};
+  let alldic = option.dicData || {};
   option.column.forEach(ele => {
-    if (ele.dicData) columnData[ele.prop] = getDataType(ele.dicData, ele.props, ele.dataType);
+    if (ele.dicData) {
+      locationdic[ele.prop] = ele.dicData;
+    }
   });
-  let result = { ...optionData, ...columnData }
-  Object.keys(result).forEach(ele => {
-    safe.$set(safe.DIC, ele, result[ele])
-  })
-  return result
+  return Object.assign(alldic, locationdic);
 };
-
-export const sendDic = (params) => {
-  let { url, query, method, props, formatter, headers, value, column = {}, form = {}, dataType } = params;
-  url = column.dicUrl || url;
-  method = (column.dicMethod || method || 'get').toLowerCase();
-  headers = column.dicHeaders || headers || {}
-  query = column.dicQuery || query || {};
-  formatter = column.dicFormatter || formatter;
-  props = column.props || props || {};
-  let list = url.match(/[^\{\}]+(?=\})/g) || []
-  list.forEach(ele => {
-    let result = ele === key ? value : form[ele]
-    if (validatenull(result)) result = ''
-    url = url.replace(`{{${ele}}}`, result);
+function createdDic (option) {
+  let column = option.column || [];
+  let ajaxdic = [];
+  let locationdic = {};
+  let flagdic = [];
+  column.forEach(ele => {
+    let dicData = ele.dicData;
+    let dicUrl = ele.dicUrl;
+    let prop = ele.prop;
+    let parentProp = ele.parentProp;
+    flagdic = flagdic.concat(ele.cascaderItem || []);
+    if (Array.isArray(dicData)) {
+      locationdic[prop] = dicData;
+    }
+    if (ele.dicFlag === false || flagdic.includes(prop)) return;
+    if (dicUrl && !parentProp) {
+      ajaxdic.push({
+        url: dicUrl,
+        name: prop,
+        method: ele.dicMethod,
+        formatter: ele.dicFormatter,
+        props: ele.props,
+        dataType: ele.dataType,
+        resKey: (ele.props || {}).res,
+        query: ele.dicQuery
+      });
+    }
   });
+  return {
+    ajaxdic,
+    locationdic
+  };
+}
 
-  const getKey = (data) => {
-    let result = {};
-    Object.keys(data).forEach(ele => {
-      let eleKey = data[ele];
-      if (typeof (eleKey) == 'string' && eleKey.match(/\{{|}}/g)) {
-        let prop = eleKey.replace(/\{{|}}/g, '');
-        result[ele] = prop == key ? value : form[prop]
-      } else {
-        result[ele] = eleKey;
-      }
-      if (validatenull(result[ele])) result[ele] = ''
-    });
-    return result;
-  }
-
+// 循环处理字典
+function handeDic (list) {
+  let networkdic = {};
+  let result = [];
   return new Promise(resolve => {
-    if (!url) resolve([])
+    list.forEach(ele => {
+      result.push(
+        new Promise(resolve => {
+          sendDic(Object.assign(ele, {
+            url: `${ele.url.replace('{{key}}', '')}`
+          })).then(res => {
+            res = detailDic(res, ele.props, ele.dataType);
+            resolve(res);
+          }).catch(() => {
+            resolve([]);
+          });
+        })
+      );
+    });
+    Promise.all(result).then(data => {
+      list.forEach((ele, index) => {
+        networkdic[ele.name] = data[index];
+      });
+      resolve(networkdic);
+    });
+  });
+}
+
+// ajax获取字典
+export const sendDic = (params) => {
+  let { url, query, method, resKey, props, formatter, value, column, form = {} } = params;
+  if (column) {
+    url = column.dicUrl;
+    method = column.dicMethod;
+    query = column.dicQuery;
+    formatter = column.dicFormatter;
+    props = column.props;
+  }
+  url = url || '';
+  let list = url.match(/[^\{\}]+(?=\})/g);
+  list = list || [];
+  list.forEach(ele => {
+    if (ele === 'key') url = url.replace('{{key}}', value || '');
+    else url = url.replace('{{' + ele + '}}', form[ele] || '');
+  });
+  if (props) resKey = (props || {}).res || resKey;
+  return new Promise(resolve => {
     const callback = (res) => {
       let list = [];
-      res = res.data || {};
       if (typeof formatter === 'function') {
-        list = formatter(res, form);
+        list = formatter(res.data);
       } else {
-        list = getResData(res, props, dataType);
+        list = getObjValue(res.data, resKey);
       }
       resolve(list);
     };
-    const getData = () => {
-      let data = getKey(query);
-      if (method == 'get') return { params: data }
-      return { data }
+    if (!window.axios) {
+      packages.logs('axios');
+      resolve([]);
     }
-    window.axios(Object.assign({
-      url,
-      method,
-      headers: getKey(headers),
-    }, getData())).then(function (res) {
-      callback(res);
-    }).catch(() => [
-      resolve([])
-    ]);
+    if (method === 'post') {
+      window.axios.post(url, query).then(function (res) {
+        callback(res);
+      }).catch(() => [
+        resolve([])
+      ]);
+    } else {
+      window.axios.get(url, {
+        params: query
+      }).then(function (res) {
+        callback(res);
+      }).catch(() => [
+        resolve([])
+      ]);
+    }
   });
 };

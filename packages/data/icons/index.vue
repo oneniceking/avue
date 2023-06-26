@@ -8,8 +8,8 @@
                 :key="index">
           <div class="item"
                :class="[{'item--easy':discount}]">
-            <a :href="item.href"
-               @click="item.click&&item.click(item)"
+            <a :href="item.href?item.href:'javascript:void(0);'"
+               @click="item.click?item.click(item):''"
                :target="item.target">
               <div class="item-icon"
                    :style="{color:color}">
@@ -17,8 +17,8 @@
               </div>
               <div class="item-info">
                 <span>{{item.title}}</span>
-                <avue-count-up :animation="item.animation || animation"
-                               :decimals="item.decimals || decimals"
+                <avue-count-up :animation="animation"
+                               :decimals="decimals"
                                :style="{color:color}"
                                class="count"
                                :end="item.count"></avue-count-up>

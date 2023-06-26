@@ -1,6 +1,5 @@
 .avue-tree {
   position: relative;
-  height: 100%;
   &__menu {
       width:200px;
       position: fixed;
@@ -31,12 +30,8 @@
     }
   }
   &__filter {
-      margin-bottom: 5px;
+      margin-bottom: 15px;
       display: flex;
       align-items: center;
-  }
-  &__content{
-      padding: 5px 0;
-      height: calc(100% - 32px);
   }
 }

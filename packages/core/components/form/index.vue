@@ -12,22 +12,22 @@
              :props="column.props || props"
              :propsHttp="column.propsHttp || propsHttp"
              :size="column.size || size"
-             :table-data="tableData"
              :type="type || column.type"
              :column-slot="columnSlot"
-             @keyup.enter.native="enterChange">
+             @keyup.enter.native="enterChange"
+             @change="handleChange">
     <span v-if="params.html"
           v-html="params.html"></span>
     <template slot-scope="scope"
-              v-for="item in getSlotName(column,'T',$scopedSlots)?[column]:[]">
+              v-for="item in $scopedSlots[getSlotName(column,'T')]?[column]:[]">
       <slot :name="getSlotName(item,'T')"
             v-bind="scope"></slot>
     </template>
-    <template v-for="item in columnSlot"
-              slot-scope="scope"
-              :slot="item">
+    <template :slot="item.prop"
+              v-for="item in columnSlot"
+              slot-scope="scope">
       <slot v-bind="scope"
-            :name="item"></slot>
+            :name="item.prop"></slot>
     </template>
   </component>
 </template>
@@ -52,11 +52,8 @@ export default {
         return []
       }
     },
-    tableData: {
-      type: Object,
-      default: () => {
-        return {}
-      }
+    props: {
+      type: Object
     },
     clearable: {
       type: Boolean
@@ -99,32 +96,49 @@ export default {
       }
     }
   },
+  data () {
+    return {
+      first: false,
+      text: undefined,
+    }
+  },
   computed: {
     params () {
       return this.column.params || {}
     },
     event () {
       return this.column.event || {}
-    },
+    }
+  },
+  watch: {
     text: {
-      get () {
-        return this.value
-      },
-      set (val) {
-        this.$emit('input', val);
-        this.$emit('change', val)
+      handler (val) {
+        if (this.first || !this.validatenull(val)) {
+          this.first = true;
+          this.$emit('input', val);
+        } else {
+          this.first = true;
+        }
       }
+    },
+    value: {
+      handler (val) {
+        this.text = val;
+      },
+      immediate: true
     }
   },
   methods: {
     getComponent,
     getPlaceholder,
     enterChange () {
-      if (typeof this.column.enter === 'function') {
-        this.column.enter({ value: this.text, column: this.column })
-      } else if (this.enter) {
+      if (this.enter) {
         this.$emit('enter')
       }
+
+    },
+    handleChange (val) {
+      this.$emit('change', val)
     }
   }
 }

@@ -1,16 +1,9 @@
 import { sendDic, loadDic, loadCascaderDic, loadLocalDic } from 'core/dic';
-import { DIC_PROPS } from 'global/variable';
 import slot from 'core/slot'
 export default function () {
   return {
     mixins: [slot],
     props: {
-      defaults: {
-        type: Object,
-        default () {
-          return {};
-        }
-      },
       option: {
         type: Object,
         required: true,
@@ -20,43 +13,19 @@ export default function () {
       }
     },
     watch: {
-      defaults: {
-        handler (val) {
-          this.objectOption = val;
-        },
-        deep: true
-      },
-      objectOption: {
-        handler (val) {
-          this.$emit('update:defaults', val)
-        },
-        deep: true
-      },
-      propOption: {
-        handler (list) {
-          let result = {}
-          list.forEach(ele => {
-            result[ele.prop] = ele
-
-          });
-          this.$set(this, 'objectOption', result)
-        },
-        deep: true,
-      },
       option: {
         handler () {
-          this.init(false);
+          this.init();
         },
         deep: true,
-      },
+      }
     },
     data () {
       return {
         DIC: {},
         cascaderDIC: {},
         tableOption: {},
-        isMobile: '',
-        objectOption: {}
+        isMobile: ''
       };
     },
     created () {
@@ -69,7 +38,7 @@ export default function () {
         })
       },
       rowKey () {
-        return this.tableOption.rowKey || DIC_PROPS.rowKey;
+        return this.tableOption.rowKey || "id";
       },
       formRules () {
         let result = {};
@@ -83,25 +52,18 @@ export default function () {
         return this.controlSize;
       },
       controlSize () {
-        return this.tableOption.size || this.$AVUE.size;
+        return this.tableOption.size || this.$AVUE.size || 'small';
       }
     },
     methods: {
-      init (type) {
+      init () {
         this.tableOption = this.option;
         this.getIsMobile();
         this.handleLocalDic();
-        if (type !== false) this.handleLoadDic()
-      },
-      dicInit (type) {
-        if (type === 'cascader') {
-          this.handleLoadCascaderDic()
-        } else {
-          this.handleLoadDic();
-        }
+        this.handleLoadDic()
       },
       getIsMobile () {
-        this.isMobile = document.body.clientWidth <= 768;
+        this.isMobile = window.document.body.clientWidth <= 768;
       },
       updateDic (prop, list) {
         let column = this.findObject(this.propOption, prop);
@@ -117,17 +79,29 @@ export default function () {
           this.$set(this.DIC, prop, list);
         }
       },
+      handleSetDic (list, res = {}) {
+        Object.keys(res).forEach(ele => {
+          this.$set(list, ele, res[ele])
+        });
+        this.forEachLabel && this.forEachLabel()
+      },
       //本地字典
       handleLocalDic () {
-        loadLocalDic(this.resultOption, this)
+        let res = loadLocalDic(this.resultOption)
+        this.handleSetDic(this.DIC, res);
       },
       // 网络字典加载
       handleLoadDic () {
-        loadDic(this.resultOption, this)
+        return new Promise((resolve) => {
+          loadDic(this.resultOption).then(res => {
+            this.handleSetDic(this.DIC, res);
+            resolve();
+          });
+        })
       },
       //级联字典加载
       handleLoadCascaderDic () {
-        loadCascaderDic(this.propOption, this)
+        loadCascaderDic(this.propOption, this.data).then(res => this.handleSetDic(this.cascaderDIC, res));
       }
     }
   };

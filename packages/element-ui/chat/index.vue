@@ -90,10 +90,10 @@
                       <div style="text-align: right; margin: 0">
                         <el-button size="mini"
                                    type="text"
-                                   @click="visible = false">{{t("common.cancelBtn")}}</el-button>
+                                   @click="visible = false">取消</el-button>
                         <el-button type="primary"
                                    size="mini"
-                                   @click="addKey">{{t("common.submitBtn")}}</el-button>
+                                   @click="addKey">确定</el-button>
                       </div>
                       <el-button slot="reference"
                                  type="text"
@@ -122,71 +122,62 @@
       </div>
       <slot></slot>
     </div>
-    <div v-if="upload.box">
-      <el-dialog :title="upload.title"
-                 :modal-append-to-body="$AVUE.modalAppendToBody"
-                 :append-to-body="$AVUE.appendToBody"
-                 :visible.sync="upload.box"
-                 width="30%">
-        <el-form ref="form"
-                 :model="upload">
-          <el-form-item prop="src"
-                        :rules="[
+    <el-dialog :title="upload.title"
+               append-to-body
+               :visible.sync="upload.box"
+               width="30%">
+      <el-form ref="form"
+               :model="upload">
+        <el-form-item prop="src"
+                      :rules="[
       { required: true, message: '地址不能为空'},
     ]">
-            <el-input size="mini"
-                      style="margin-bottom:10px"
-                      :rows="4"
-                      show-word-limit
-                      maxlength="100"
-                      placeholder="请输入地址"
-                      v-model="upload.src"
-                      type="textarea"></el-input>
-          </el-form-item>
-        </el-form>
-        <span slot="footer"
-              class="dialog-footer">
-          <el-button @click="upload.box=false"
-                     size="small">{{t("common.cancelBtn")}}</el-button>
-          <el-button type="primary"
-                     @click="uploadSubmit"
-                     size="small">{{t("common.submitBtn")}}</el-button>
-        </span>
-      </el-dialog>
-    </div>
-
-    <div v-if="show">
-      <el-dialog :visible.sync="show"
-                 width="40%"
-                 :modal-append-to-body="$AVUE.modalAppendToBody"
-                 :append-to-body="$AVUE.appendToBody"
-                 :before-close="handleClose"
-                 class="web__dialog">
-        <img :src="imgSrc"
-             v-if="imgSrc"
-             style="width:100%;object-fit: cover;">
-        <video :src="videoSrc"
-               v-if="videoSrc"
-               style="width:100%;object-fit: cover;"
-               controls="controls">
-        </video>
-        <audio :src="audioSrc"
-               v-if="audioSrc"
-               style="width:100%;object-fit: cover;"
-               controls="controls">
-        </audio>
-      </el-dialog>
-    </div>
+          <el-input size="mini"
+                    style="margin-bottom:10px"
+                    :rows="4"
+                    show-word-limit
+                    maxlength="100"
+                    placeholder="请输入地址"
+                    v-model="upload.src"
+                    type="textarea"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer"
+            class="dialog-footer">
+        <el-button @click="upload.box=false"
+                   size="small">取 消</el-button>
+        <el-button type="primary"
+                   @click="uploadSubmit"
+                   size="small">确 定</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog :visible.sync="show"
+               width="40%"
+               append-to-body
+               :before-close="handleClose"
+               class="web__dialog">
+      <img :src="imgSrc"
+           v-if="imgSrc"
+           style="width:100%;object-fit: cover;">
+      <video :src="videoSrc"
+             v-if="videoSrc"
+             style="width:100%;object-fit: cover;"
+             controls="controls">
+      </video>
+      <audio :src="audioSrc"
+             v-if="audioSrc"
+             style="width:100%;object-fit: cover;"
+             controls="controls">
+      </audio>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import create from "core/create";
-import locale from "core/locale";
-import dayjs from 'dayjs'
+import { dateFtt } from 'utils/date'
 export default create({
   name: "chat",
-  mixins: [locale],
   data () {
     return {
       upload: {
@@ -201,6 +192,7 @@ export default create({
       audioSrc: '',
       keys: "",
       show: false,
+      msg: '',
     }
   },
   props: {
@@ -263,16 +255,28 @@ export default create({
       }
     }
   },
-  computed: {
-    msg: {
-      get () {
-        return this.value
-      },
-      set (val) {
-        this.$emit('input', val);
-        this.$emit('change', val);
+  watch: {
+    'upload.box' (val) {
+      if (val) {
+        this.$nextTick(() => {
+          this.$refs.form.clearValidate()
+        })
       }
     },
+    value: {
+      handler () {
+        this.msg = this.value;
+      },
+      immediate: true
+    },
+    msg: {
+      handler () {
+        this.$emit('input', this.msg);
+      },
+      immediate: true
+    }
+  },
+  computed: {
     heightStyleName () {
       return {
         height: this.setPx(this.height)
@@ -374,7 +378,7 @@ export default create({
       const text = params.text || {};
       const date = params.date
       const textObj = {
-        date: date || dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        date: date || dateFtt('yyyy-MM-dd hh:mm:ss', new Date()),
         text: (() => {
           if (typeof (text) != 'object') {
             return {
@@ -413,7 +417,7 @@ export default create({
     handleDetail (html = '') {
       let result = html;
       setTimeout(() => {
-        const list = this.$refs.content || [];
+        const list = this.$refs.content;
         list.forEach(ele => {
           for (let i = 0; i < ele.children.length; i++) {
             const child = ele.children[i];

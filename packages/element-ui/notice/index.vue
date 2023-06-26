@@ -22,7 +22,6 @@
       </div>
     </div>
     <div :class="b('more')"
-         v-if="!finish"
          v-loading="loading"
          @click="handleClick">
       加载更多
@@ -42,10 +41,6 @@ import create from "core/create";
 export default create({
   name: 'notice',
   props: {
-    finish: {
-      type: Boolean,
-      default: false
-    },
     option: {
       type: Object,
       default: () => {

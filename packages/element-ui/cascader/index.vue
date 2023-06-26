@@ -4,15 +4,15 @@
                :placeholder="placeholder"
                :props="allProps"
                :size="size"
-               :clearable="clearableVal"
+               :emit-path="emitPath"
+               :change-on-select="changeOnSelect"
+               :clearable="disabled?false:clearable"
+               :expand-trigger="expandTrigger"
                :show-all-levels="showAllLevels"
                :filterable="filterable"
-               :popper-class="popperClass"
                :separator="separator"
                :disabled="disabled"
                :collapse-tags="tags"
-               @focus="handleFocus"
-               @blur="handleBlur"
                @click.native="handleClick">
     <template slot-scope="{data,node}">
       <slot v-if="$scopedSlots.default"
@@ -25,8 +25,8 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "cascader",
   mixins: [props(), event()],
@@ -40,6 +40,14 @@ export default create({
       default: true
     },
     tags: {
+      type: Boolean,
+      default: false
+    },
+    value: {
+      type: Array,
+      default: () => []
+    },
+    changeOnSelect: {
       type: Boolean,
       default: false
     },
@@ -60,6 +68,10 @@ export default create({
       type: Boolean,
       default: false
     },
+    expandTrigger: {
+      type: String,
+      default: 'click'
+    },
     separator: {
       type: String
     }
@@ -67,6 +79,7 @@ export default create({
   data () {
     return {};
   },
+  watch: {},
   computed: {
     allProps () {
       return {
@@ -75,7 +88,6 @@ export default create({
         children: this.childrenKey,
         checkStrictly: this.checkStrictly,
         multiple: this.multiple,
-        emitPath: this.emitPath,
         lazy: this.lazy,
         lazyLoad: (node, resolve) => {
           let callback = (list) => {

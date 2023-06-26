@@ -1,6 +1,5 @@
 <template>
-  <div :class="b()"
-       :key="reload">
+  <div :class="b()">
     <template v-if="isForm">
       <div :class="b('header')">
         <el-button size="mini"
@@ -27,20 +26,19 @@
                      circle></el-button>
           <avue-form :key="index"
                      ref="main"
-                     :option="deepClone(option)"
-                     v-bind="$uploadFun({},this)"
+                     :option="option"
                      v-model="text[index]">
             <div slot-scope="{}"
                  slot="_index">
               <span>{{item.$index+1}}</span>
             </div>
-            <template v-for="item in columnSlot"
+            <template v-for="column in columnSlot"
                       slot-scope="scope"
-                      :slot="item">
-              <slot :name="item"
-                    v-bind="Object.assign(scope,{
+                      :slot="column.prop">
+              <slot v-bind="Object.assign(scope,{
                   row:text[index]
-                })"></slot>
+                })"
+                    :name="column.prop"></slot>
             </template>
           </avue-form>
         </div>
@@ -50,22 +48,11 @@
                ref="main"
                :option="option"
                :disabled="disabled"
-               v-bind="$uploadFun({},this)"
                @cell-mouse-enter="cellMouseenter"
                @cell-mouse-leave="cellMouseLeave"
                @selection-change="handleSelectionChange"
                @sortable-change="handleSortableChange"
                :data="text">
-      <template slot-scope="scope"
-                slot="_indexHeader">
-        <el-button v-if="!(addBtn || readonly) && maxFlag"
-                   @click="addRow()"
-                   type="primary"
-                   size="mini"
-                   :disabled="disabled"
-                   icon="el-icon-plus"
-                   circle></el-button>
-      </template>
       <template slot-scope="scope"
                 slot="_index">
         <el-button v-if="!readonly && !disabled  && !delBtn && hoverList[scope.row.$index]"
@@ -79,9 +66,9 @@
       </template>
       <template v-for="item in columnSlot"
                 slot-scope="scope"
-                :slot="getSlotName({prop:item},'F')">
+                :slot="getSlotName(item,'F')">
         <slot v-bind="scope"
-              :name="item"></slot>
+              :name="item.prop"></slot>
       </template>
     </avue-crud>
   </div>
@@ -89,25 +76,17 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "dynamic",
   mixins: [props(), event()],
   data () {
     return {
-      reload: Math.random(),
       hoverList: []
     }
   },
   props: {
-    uploadBefore: Function,
-    uploadAfter: Function,
-    uploadDelete: Function,
-    uploadPreview: Function,
-    uploadError: Function,
-    uploadExceed: Function,
-    max: Number,
     columnSlot: {
       type: Array,
       default: () => {
@@ -122,15 +101,6 @@ export default create({
     }
   },
   computed: {
-    textLen () {
-      return this.text.length;
-    },
-    maxFlag () {
-      if (this.max) {
-        return !(this.text.length == this.max)
-      }
-      return true
-    },
     showIndex () {
       return this.vaildData(this.children.index, true)
     },
@@ -204,16 +174,33 @@ export default create({
           label: this.children.indexLabel || '#',
           prop: '_index',
           display: this.showIndex,
-          hide: !this.showIndex,
+          detail: true,
           fixed: true,
           align: 'center',
           headerAlign: 'center',
           span: 24,
-          width: 50
+          width: 50,
+          renderHeader: (h, { column, $index }) => {
+            if (this.addBtn || this.readonly) {
+              return
+            }
+            return h('el-button', {
+              attrs: {
+                size: 'mini',
+                type: 'primary',
+                icon: 'el-icon-plus',
+                disabled: this.disabled,
+                circle: true
+              },
+              on: {
+                click: this.addRow
+              }
+            })
+          },
         }];
         this.columnOption.forEach(ele => {
           list.push(Object.assign(ele, {
-            cell: this.vaildData(ele.cell, this.isCrud)
+            cell: this.vaildData(ele.cell, true)
           }))
         })
         return {
@@ -226,6 +213,9 @@ export default create({
     this.initData();
   },
   watch: {
+    textLen () {
+      return this.text.length;
+    },
     text () {
       this.initData();
     }
@@ -273,7 +263,6 @@ export default create({
         let list = this.deepClone(this.text)
         list.splice(index, 1);
         this.text = list;
-        this.reload = Math.random();
       }
       if (typeof this.rowDel === 'function') {
         this.rowDel(this.text[index], callback);

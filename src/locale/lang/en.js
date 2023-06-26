@@ -1,29 +1,20 @@
 export default {
   common: {
-    submitBtn: 'submit',
-    cancelBtn: 'cancel',
     condition: 'condition',
     display: 'display',
     hide: 'hide'
   },
   tip: {
-    select: 'Please select',
-    input: 'Please input'
-  },
-  check: {
-    checkAll: 'checkAll'
+    select: 'please select',
+    input: 'please input'
   },
   upload: {
     upload: 'upload',
     tip: 'Drag files here，/'
   },
-  time: {
-    start: 'start',
-    end: 'end',
-  },
   date: {
-    start: 'start',
-    end: 'end',
+    start: 'Start date',
+    end: 'End date',
     t: 'today',
     y: 'yesterday',
     n: 'nearly 7',
@@ -32,8 +23,8 @@ export default {
   form: {
     printBtn: 'print',
     mockBtn: 'mock',
-    submitBtn: 'submit',
-    emptyBtn: 'empty'
+    submit: 'submit',
+    empty: 'empty'
   },
   crud: {
     filter: {
@@ -43,17 +34,8 @@ export default {
       cancelBtn: 'cancel',
       submitBtn: 'submit'
     },
-    column: {
-      name: 'name',
-      hide: 'hide',
-      fixed: 'fixed',
-      filters: 'filters',
-      sortable: 'sortable',
-      index: 'index',
-      width: 'width'
-    },
     tipStartTitle: 'Currently selected',
-    tipEndTitle: 'items',
+    tipEndTitle: 'term',
     editTitle: 'edit',
     copyTitle: 'copy',
     addTitle: 'add',
@@ -64,8 +46,9 @@ export default {
     addBtn: 'add',
     show: 'show',
     hide: 'hide',
-    open: 'open',
-    shrink: 'shrink',
+    showBtn: 'show',
+    filterBtn: 'filter',
+    refreshBtn: 'refresh',
     printBtn: 'print',
     excelBtn: 'excel',
     updateBtn: 'update',
@@ -77,6 +60,7 @@ export default {
     viewBtn: 'view',
     editBtn: 'edit',
     copyBtn: 'copy',
-    delBtn: 'delete'
+    delBtn: 'del'
   }
 }
+  ;

@@ -9,12 +9,12 @@
       <div :class="b('content')">
         <slot :name="column.prop"
               :dic="DIC[column.prop]"
-              v-if="mainSlot.includes(column.prop)"></slot>
+              v-if="column.slot"></slot>
         <span v-else
               :class="[b('tags'),{'avue-search__tags--active':getActive(item,column)}]"
               @click="handleClick(column,item)"
               v-for="item in DIC[column.prop]"
-              :key="getKey(item,column.props,valueKey)">{{getKey(item,column.props,labelKey)}}</span>
+              :key="getKey(item,column.props,'value')">{{getKey(item,column.props,'label')}}</span>
       </div>
     </el-col>
   </el-row>
@@ -22,81 +22,73 @@
 
 <script>
 import create from "core/create";
-import { DIC_PROPS } from 'global/variable'
-import init from "common/common/init.js";
+import init from "../../core/common/init.js";
 export default create({
   name: "search",
   mixins: [init()],
   props: {
     value: {}
   },
-  watch: {
-    value: {
-      handler (val) {
-        this.setVal(val)
-      },
-      deep: true
-    }
-  },
   computed: {
-    form: {
-      get () {
-        return this.value
-      },
-      set (val) {
-        this.setVal(val)
-      }
-    },
-    props () {
-      return this.parentOption.props || {}
-    },
-    labelKey () {
-      return DIC_PROPS.label
-    },
-    valueKey () {
-      return DIC_PROPS.value
-    },
-    mainSlot () {
-      let result = [];
-      this.propOption.forEach(item => {
-        if (this.$scopedSlots[item.prop]) result.push(item.prop)
-      })
-      return result
-    },
     isCard () {
       return this.parentOption.card;
     },
     parentOption () {
-      return this.tableOption;
+      let option = this.deepClone(this.tableOption);
+      return option;
     },
     propOption () {
-      return this.columnOption;
+      let list = [];
+      this.columnOption.forEach(column => list.push(column));
+      return list;
     },
     columnOption () {
-      return this.parentOption.column;
+      let list = [...this.parentOption.column] || [];
+      return list;
+    }
+  },
+  data () {
+    return {
+      form: {}
+    };
+  },
+  watch: {
+    value: {
+      handler () {
+        this.setVal();
+      },
+      deep: true
     }
   },
   created () {
-    this.dataFormat();
+    this.dataformat();
+    this.setVal();
   },
   methods: {
-    setVal (val) {
-      this.$emit('input', val)
-      this.$emit("change", val);
+    setVal () {
+      Object.keys(this.value).forEach(ele => {
+        this.$set(this.form, ele, this.value[ele]);
+      });
     },
     getKey (item = {}, props = {}, key) {
-      return item[props[key] || this.props[key] || key];
+      return item[
+        props[key] || (this.parentOption.props || {})[key] || key
+      ];
     },
-    dataFormat () {
-      this.propOption.forEach(ele => {
+    dataformat () {
+      this.columnOption.forEach(ele => {
         const prop = ele.prop;
         if (this.validatenull(this.form[prop])) {
-          this.$set(this.form, prop, ele.multiple === false ? "" : []);
+          if (ele.multiple === false) {
+            this.$set(this.form, prop, "");
+          } else {
+            this.$set(this.form, prop, []);
+          }
         }
       });
     },
     getActive (item, column) {
-      const value = this.getKey(item, column.props, this.valueKey);
+      const value = this.getKey(item, column.props, "value");
       if (column.multiple === false) {
         return this.form[column.prop] === value;
       } else {
@@ -104,7 +96,7 @@ export default create({
       }
     },
     handleClick (column, item) {
-      const value = this.getKey(item, column.props, this.valueKey);
+      const value = this.getKey(item, column.props, "value");
       //单选
       if (column.multiple === false) {
         this.form[column.prop] = value;
@@ -117,6 +109,8 @@ export default create({
           this.form[column.prop].splice(index, 1);
         }
       }
+      this.$emit("change", this.form);
+      this.$emit("input", this.form);
     }
   }
 });

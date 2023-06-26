@@ -18,7 +18,6 @@ export default function () {
       change: Function,
       click: Function,
       typeformat: Function,
-      control: Function,
       separator: {
         type: String,
         default: DIC_SPLIT
@@ -31,9 +30,6 @@ export default function () {
       },
       listType: {
         type: String,
-      },
-      tableData: {
-        type: Object
       },
       value: {},
       column: {
@@ -131,9 +127,6 @@ export default function () {
         type: Boolean,
         default: false
       },
-      popperClass: {
-        type: String,
-      },
       propsHttp: {
         type: Object,
         default: () => DIC_HTTP_PROPS
@@ -145,22 +138,19 @@ export default function () {
     },
     watch: {
       text: {
-        handler (n) {
+        handler (n, o) {
           this.handleChange(n)
         }
       },
       value: {
-        handler () {
+        handler (n, o) {
           this.initVal();
         }
       }
     },
     computed: {
-      clearableVal () {
-        return this.disabled ? false : this.clearable
-      },
       componentName () {
-        const type = 'el'
+        const type = this.$AVUE.ui.type;
         const result = `${type}-${this.name}${this.button ? '-button' : ''}`
         return result
       },
@@ -176,42 +166,42 @@ export default function () {
       isNumber () {
         return this.dataType === 'number';
       },
-      nameKey () {
+      nameKey: function () {
         return this.propsHttp.name || this.propsHttpDefault.name;
       },
-      urlKey () {
+      urlKey: function () {
         return this.propsHttp.url || this.propsHttpDefault.url;
       },
-      resKey () {
+      resKey: function () {
         return this.propsHttp.res || this.propsHttpDefault.res;
       },
-      groupsKey () {
+      groupsKey: function () {
         return this.props.groups || this.propsDefault.groups;
       },
-      valueKey () {
+      valueKey: function () {
         return this.props.value || this.propsDefault.value;
       },
-      descKey () {
+      descKey: function () {
         return this.props.desc || this.propsDefault.desc;
       },
-      leafKey () {
+      leafKey: function () {
         return this.props.leaf || this.propsDefault.leaf;
       },
-      labelKey () {
+      labelKey: function () {
         return this.props.label || this.propsDefault.label;
       },
-      childrenKey () {
+      childrenKey: function () {
         return this.props.children || this.propsDefault.children;
       },
-      disabledKey () {
+      disabledKey: function () {
         return this.props.disabled || this.propsDefault.disabled;
       },
-      idKey () {
+      idKey: function () {
         return this.props.id || this.propsDefault.id;
       }
     },
     created () {
-      this.initVal()
+      this.initVal();
     }
   };
 }

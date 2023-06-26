@@ -11,20 +11,18 @@
 
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
 
-  <script src="../../cdn/vue/vue.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
 
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
 </head>
 
 <body>
   <div id="app">
-    {{form}}
-    <avue-tree :before-open="beforeOpen" :before-close="beforeClose" v-model="form" ref="tree"
-      :filter-node-method="filterNodeMethod" :permission="getPermission" :option="option" :data="data"
-      @node-click="nodeClick" @update="update" @save="save" @del="del" v-model="form">
+    <avue-tree ref="tree" :permission="getPermission" :option="option" :data="data" @node-click="nodeClick"
+      @update="update" @save="save" @del="del" v-model="form">
       <span class="el-tree-node__label" slot-scope="{ node, data }">
         <span>
           <i class="el-icon-user-solid"></i>
@@ -32,7 +30,7 @@
         </span>
       </span>
       <template slot-scope="scope" slot="menu">
-        <div class="avue-tree__item" @click="tip(scope.node,scope.data)">自定义按钮</di>
+        <div class="avue-tree__item" @click.native="tip(scope.node,scope.data)">自定义按钮</di>
       </template>
     </avue-tree>
 
@@ -79,24 +77,8 @@
             labelWidth: 100,
             column: [{
               label: '自定义项',
-              prop: 'label'
-            }, {
-              label: '适用工厂',
-              prop: 'im_FactoryIds',
-              span: 24,
-              type: 'tree',
-              props: {
-                label: 'label',
-                value: 'value'
-              },
-              rules: [{
-                required: true,
-                message: "不能为空",
-                trigger: "change"
-              }],
-              dicUrl: 'https://api.avuejs.com/area/getProvince',
-              multiple: true,
-            },],
+              prop: 'test'
+            }],
           },
           props: {
             labelText: '标题',
@@ -108,14 +90,6 @@
       }
     },
     methods: {
-      beforeOpen(done, type) {
-        alert(type);
-        done()
-      },
-      beforeClose(done, type) {
-        alert(type);
-        done()
-      },
       getPermission(key, data) {
         if (key == "addBtn") { return false; }
         return true;
@@ -137,10 +111,6 @@
         this.$message.success('新增回调')
         this.form.value = new Date().getTime();
         done();
-      },
-      filterNodeMethod(value, data) {
-        if (!value) return true;
-        return data.label.indexOf(value) !== -1;
       },
       nodeClick(data) {
         this.$message.success(JSON.stringify(data))

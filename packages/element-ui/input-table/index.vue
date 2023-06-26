@@ -1,10 +1,8 @@
 <template>
   <div :class="b()">
-    <el-input :prefix-icon="prefixIcon"
-              :suffix-icon="suffixIcon"
-              :size="size"
+    <el-input :size="size"
               :value="labelShow"
-              :clearable="clearableVal"
+              :clearable="disabled?false:clearable"
               :placeholder="placeholder"
               ref="main"
               @clear="handleClear"
@@ -12,51 +10,43 @@
               @click.native="handleClick"
               :disabled="disabled">
     </el-input>
-    <div v-if="box">
-      <el-dialog class="avue-dialog avue-dialog--none"
-                 :width="dialogWidth"
-                 :modal-append-to-body="$AVUE.modalAppendToBody"
-                 :append-to-body="$AVUE.appendToBody"
-                 :title="placeholder"
-                 :visible.sync="box">
-        <avue-crud :class="b('crud')"
-                   ref="crud"
-                   v-if="box"
-                   :option="option"
-                   :data="data"
-                   :table-loading="loading"
-                   @on-load="onList"
-                   @search-change="handleSearchChange"
-                   @search-reset="handleSearchChange"
-                   @current-row-change="handleCurrentRowChange"
-                   :search.sync="search"
-                   :page.sync="page"></avue-crud>
-        <span slot="footer"
-              class="dialog-footer">
-          <el-button type="primary"
-                     :size="size"
-                     icon="el-icon-check"
-                     @click="setVal">{{t("common.submitBtn")}}</el-button>
-        </span>
-      </el-dialog>
-    </div>
-
+    <el-dialog class="avue-dialog"
+               width="80%"
+               append-to-body
+               :title="placeholder"
+               :visible.sync="box">
+      <avue-crud :class="b('crud')"
+                 ref="crud"
+                 :option="option"
+                 :data="data"
+                 v-loading="loading"
+                 @on-load="onList"
+                 @search-change="handleSearchChange"
+                 @search-reset="handleSearchChange"
+                 @current-row-change="handleCurrentRowChange"
+                 :page.sync="page"></avue-crud>
+      <span slot="footer"
+            class="dialog-footer">
+        <el-button type="primary"
+                   :size="size"
+                   icon="el-icon-check"
+                   @click="setVal">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
-import locale from "core/locale";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "input-table",
-  mixins: [props(), event(), locale],
+  mixins: [props(), event()],
   data () {
     return {
       object: {},
       active: {},
-      search: {},
       page: {},
       loading: false,
       box: false,
@@ -65,24 +55,22 @@ export default create({
     };
   },
   props: {
-    prefixIcon: {
-      type: String
-    },
-    suffixIcon: {
-      type: String
-    },
     formatter: Function,
-    onLoad: Function,
-    dialogWidth: {
-      type: String,
-      default: '80%'
-    },
+    onLoad: Function
   },
   watch: {
     value (val) {
       if (this.validatenull(val)) {
         this.active = {}
         this.object = {}
+      }
+    },
+    box (val) {
+      if (val) {
+        setTimeout(() => {
+          let active = this.data.find(ele => ele[this.valueKey] == this.object[this.valueKey])
+          this.$refs.crud.setCurrentRow(active);
+        })
       }
     },
     text (val) {
@@ -110,7 +98,7 @@ export default create({
       return Object.assign({
         menu: false,
         header: false,
-        size: this.size,
+        size: 'mini',
         headerAlign: 'center',
         align: 'center',
         highlightCurrentRow: true,
@@ -125,35 +113,31 @@ export default create({
     handleShow () {
       this.$refs.main.blur();
       if (this.disabled || this.readonly) return;
-      this.page = {
-        currentPage: 1,
-        total: 0
-      }
-      this.data = []
       this.box = true;
     },
     setVal () {
       this.object = this.active
       this.text = this.active[this.valueKey] || ''
+      this.handleChange(this.text)
       this.box = false
     },
     handleCurrentRowChange (val) {
       this.active = val;
     },
     handleSearchChange (form, done) {
-      this.page.page = 1;
-      this.onList()
+      this.onLoad({ page: this.page, data: form }, data => {
+        this.page.total = data.total;
+        this.data = data.data;
+      })
       done && done()
     },
-    onList () {
+    onList (callback) {
       this.loading = true;
       if (typeof this.onLoad == 'function') {
-        this.onLoad({ page: this.page, data: this.search }, data => {
+        this.onLoad({ page: this.page }, data => {
           this.page.total = data.total;
           this.data = data.data
           this.loading = false;
-          let active = this.data.find(ele => ele[this.valueKey] == this.object[this.valueKey])
-          setTimeout(() => this.$refs.crud.setCurrentRow(active))
         })
       }
     }

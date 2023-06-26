@@ -23,8 +23,8 @@
                  :style="{color:item.color}">
                 <span>¥</span>
                 <avue-count-up class="b"
-                               :decimals="item.decimals || decimals"
-                               :animation="item.animation || animation"
+                               :decimals="decimals"
+                               :animation="animation"
                                :end="item.dismoney"></avue-count-up>
                 <s>{{item.money}}</s>
                 <em>{{item.tip}}</em>
@@ -32,8 +32,8 @@
             </template>
             <div class="line"></div>
             <a class="btn"
-               :href="item.href"
-               @click="item.click&&item.click(item)"
+               :href="item.href?item.href:'javascript:void(0);'"
+               @click="item.click?item.click(item):''"
                :style="{backgroundColor:item.color}">{{item.subtext}}</a>
           </div>
           <div class="list">

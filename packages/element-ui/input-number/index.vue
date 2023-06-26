@@ -7,10 +7,10 @@
                    :precision="precision"
                    :placeholder="placeholder"
                    :size="size"
-                   :min="min"
-                   :max="max"
+                   :min="minRows"
+                   :max="maxRows"
                    :step="step"
-                   :clearable="clearableVal"
+                   :clearable="disabled?false:clearable"
                    :readonly="readonly"
                    :controls-position="controlsPosition"
                    :controls="controls"
@@ -20,8 +20,8 @@
 
 <script>
 import create from "core/create";
-import props from "common/common/props.js";
-import event from "common/common/event.js";
+import props from "../../core/common/props.js";
+import event from "../../core/common/event.js";
 export default create({
   name: "input-number",
   mixins: [props(), event()],
@@ -44,11 +44,11 @@ export default create({
     precision: {
       type: Number
     },
-    min: {
+    minRows: {
       type: Number,
       default: -Infinity
     },
-    max: {
+    maxRows: {
       type: Number,
       default: Infinity
     }

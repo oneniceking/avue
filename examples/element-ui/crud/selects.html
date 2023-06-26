@@ -9,9 +9,9 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
 
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
@@ -19,7 +19,7 @@
 
 <body>
   <div id="app">
-    <avue-crud ref="crud" :option="option1" :data="data1" @submit="submit"></avue-crud>
+    <avue-crud :option="option1" :data="data1" @submit="submit"></avue-crud>
   </div>
 </body>
 <script>
@@ -43,12 +43,11 @@
             label: '省份',
             prop: 'province',
             type: 'select',
-            search: true,
             props: {
               label: 'name',
               value: 'code'
             },
-            cascader: ['city'],
+            cascaderItem: ['city', 'area'],
             dicUrl: `${baseUrl}/getProvince`,
             // dicMethod: 'post',
             // dicQuery: {
@@ -66,12 +65,10 @@
             label: '城市',
             prop: 'city',
             type: 'select',
-            search: true,
             props: {
               label: 'name',
               value: 'code'
             },
-            cascader: ['area'],
             dicUrl: `${baseUrl}/getCity/{{key}}`,
             rules: [
               {
@@ -84,13 +81,12 @@
           {
             label: '地区',
             prop: 'area',
-            search: true,
             props: {
               label: 'name',
               value: 'code'
             },
             type: 'select',
-            dicUrl: `${baseUrl}/getArea/{{key}}?city={{city}}`,
+            dicUrl: `${baseUrl}/getArea/{{key}}`,
             rules: [
               {
                 required: true,
@@ -121,7 +117,6 @@
             area: '140623'
           }
         ]
-        this.$nextTick(() => this.$refs.crud.dicInit('cascader'))
       }, 0)
     },
     methods: {

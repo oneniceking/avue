@@ -25,16 +25,6 @@ export default create({
     }
   },
   computed: {
-    data: {
-      get () {
-        return this.value || ''
-      },
-      set (val) {
-        let value = val + ''
-        this.$emit('input', value)
-        this.$emit('change', value)
-      }
-    },
     styleName () {
       return {
         padding: `${this.setPx(this.size / 7)} ${this.setPx(this.size / 4)}`,
@@ -45,8 +35,28 @@ export default create({
       return this.data.split('');
     }
   },
-  created () {
-    this.randomn();
+  watch: {
+    value: {
+      handler (val) {
+        if (this.validatenull(val)) {
+          this.randomn();
+          return
+        }
+        this.data = val + '';
+      },
+      immediate: true,
+    },
+    data: {
+      handler (val) {
+        this.$emit('input', val);
+      },
+      immediate: true,
+    }
+  },
+  data () {
+    return {
+      data: 0,
+    }
   },
   methods: {
     randomn () {

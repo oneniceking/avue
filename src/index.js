@@ -1,12 +1,11 @@
-import components from './ui/index'
-import { version } from './version';
-import axios from 'axios'
-import { validatenull } from 'utils/validate.js';
-import { randomId, deepClone, dataURLtoFile, findObject, vaildData, findArray, findNode, setPx, isJson, downFile, loadScript } from 'utils/util';
+import components from 'ui/index';
+import config from 'ui/config';
+import { validatenull, asyncValidator } from 'utils/validate.js';
+import { deepClone, dataURLtoFile, findObject, vaildData, findArray, setPx, sortArrys, isJson, downFile, loadScript } from 'utils/util';
 import dialogDrag from 'packages/core/directive/dialog-drag';
-import contextmenu from 'packages/core/directive/contextmenu';
-import $Export from 'plugin/export/';
+import _export from 'plugin/export/';
 import { watermark } from 'plugin/canvas/';
+import './utils/es6.js';
 import $Log from 'plugin/logs/';
 import locale from './locale/';
 import $Screenshot from 'plugin/screenshot/';
@@ -14,14 +13,9 @@ import $Clipboard from 'plugin/clipboard/';
 import $Print from 'plugin/print/';
 import $NProgress from 'plugin/nprogress/';
 import $ImagePreview from 'packages/core/components/image-preview/';
-import $ImageCropper from 'packages/core/components/image-cropper/';
-import $DialogForm from 'packages/core/components/dialog-form/';
-//测试
+import $Group from 'packages/core/components/group/';
+
 let prototypes = {
-  $ImagePreview,
-  $ImageCropper,
-  $DialogForm,
-  $Export,
   $Print,
   $Clipboard,
   $Log,
@@ -32,28 +26,69 @@ let prototypes = {
   isJson,
   setPx,
   vaildData,
+  sortArrys,
   findArray,
-  findNode,
   validatenull,
   downFile,
   loadScript,
   watermark,
-  findObject,
-  randomId
+  asyncValidator,
+  findObject
 
 };
-let directive = {
-  dialogDrag,
-  contextmenu
-}
 const install = function (Vue, opts = {}) {
-  if (opts.theme === 'dark') document.documentElement.className = 'avue-theme--dark';
-  const defaultOption = {
+  Vue.use(_export);
+  // 初始化指令
+  Vue.directive('dialogdrag', dialogDrag);
+  Object.keys(components).map(ele => {
+    let component = components[ele];
+    let name = component.name || '';
+    name = name.substr(name.length - 1, 1) === '-' ? (name.substr(0, name.length - 1)) + ele : name;
+    Vue.component(name, component);
+  });
+  Object.keys(prototypes).forEach((key) => {
+    Vue.prototype[key] = prototypes[key];
+  });
+  // 国际化
+  locale.use(opts.locale);
+  locale.i18n(opts.i18n);
+  Vue.prototype.$axios = opts.axios || window.axios;
+  Vue.prototype.$typeList = {
+    img: /\.(gif|jpg|jpeg|png|GIF|JPG|PNG)/,
+    video: /\.(swf|avi|flv|mpg|rm|mov|wav|asf|3gp|mkv|rmvb|ogg|mp4)/
+  };
+  Vue.component($Group.name, $Group);
+  Vue.prototype.$ImagePreview = $ImagePreview(Vue);
+  if (opts.theme === 'dark') {
+    document.documentElement.className = 'avue-theme--dark';
+  }
+  Vue.prototype.$uploadFun = function (column = {}, safe) {
+    safe = safe || this;
+    let list = ['uploadPreview', 'uploadBefore', 'uploadAfter', 'uploadDelete', 'uploadError', 'uploadExceed'];
+    let result = {};
+    if (column.type === 'upload') {
+      list.forEach(ele => {
+        if (!column[ele]) {
+          result[ele] = safe[ele];
+        }
+      });
+    } else {
+      list.forEach(ele => {
+        result[ele] = safe[ele];
+      });
+    }
+    return result;
+  };
+  Vue.prototype.$AVUE = {
+    ui: (() => {
+      Vue.prototype[config.is] = true;
+      return config
+    })(),
     size: opts.size || 'small',
     calcHeight: opts.calcHeight || 0,
+    tableSize: opts.tableSize,
+    formSize: opts.formSize,
     menuType: opts.menuType || 'text',
-    modalAppendToBody: vaildData(opts.modalAppendToBody, true),
-    appendToBody: vaildData(opts.appendToBody, true),
     canvas: Object.assign({
       text: 'avuejs.com',
       fontFamily: 'microsoft yahei',
@@ -80,38 +115,6 @@ const install = function (Vue, opts = {}) {
       accessKeySecret: '',
       bucket: ''
     }, (opts.ali || {}))
-  }
-  Vue.prototype.$AVUE = Object.assign(opts, defaultOption);
-  components.forEach(component => {
-    Vue.component(component.name, component);
-  });
-  Object.keys(prototypes).forEach((key) => {
-    Vue.prototype[key] = prototypes[key];
-  });
-  Object.keys(directive).forEach((key) => {
-    Vue.directive(key, directive[key]);
-  });
-  locale.use(opts.locale);
-  locale.i18n(opts.i18n);
-  Vue.prototype.$axios = opts.axios || window.axios || axios;
-  window.axios = Vue.prototype.$axios;
-  window.Vue = Vue;
-  Vue.prototype.$uploadFun = function (column = {}, safe) {
-    safe = safe || this;
-    let list = ['uploadPreview', 'uploadBefore', 'uploadAfter', 'uploadDelete', 'uploadError', 'uploadExceed'];
-    let result = {};
-    if (column.type === 'upload') {
-      list.forEach(ele => {
-        if (!column[ele]) {
-          result[ele] = safe[ele];
-        }
-      });
-    } else {
-      list.forEach(ele => {
-        result[ele] = safe[ele];
-      });
-    }
-    return result;
   };
 };
 
@@ -119,8 +122,11 @@ if (typeof window !== 'undefined' && window.Vue) {
   install(window.Vue);
 }
 
-export default {
-  version,
-  locale,
+const Avue = Object.assign({
+  version: '2.7.9',
+  locale: locale.locale,
   install
-}
+}, components);
+
+module.exports = Avue;
+module.exports.default = module.exports;

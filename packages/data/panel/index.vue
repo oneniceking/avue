@@ -6,8 +6,8 @@
               :md="span"
               :xs="24"
               :sm="12">
-        <a :href="item.href"
-           @click="item.click&&item.click(item)">
+        <a :href="item.href?item.href:'javascript:void(0);'"
+           @click="item.click?item.click(item):''">
           <div class="item">
             <div class="item-icon">
               <i :class="item.icon"
@@ -15,8 +15,8 @@
             </div>
             <div class="item-info">
               <div class="item-title">{{item.title}}</div>
-              <avue-count-up :animation="item.animation || animation"
-                             :decimals="item.decimals || decimals"
+              <avue-count-up :animation="animation"
+                             :decimals="decimals"
                              class="item-count"
                              :end="item.count"></avue-count-up>
             </div>

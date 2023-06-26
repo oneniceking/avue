@@ -9,12 +9,10 @@
   <meta name="description" content="" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.staticfile.org/axios/0.19.0-beta.1/axios.js"></script>
-  <script src="../../cdn/vue/vue.js"></script>
-  <link rel="stylesheet" href="../../cdn/element-ui/theme-chalk/index.css" />
-  <script src="../../cdn/element-ui/index.js"></script>
+  <script src="https://cdn.staticfile.org/vue/2.5.17/vue.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/element-ui/2.13.0/theme-chalk/index.css" />
+  <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
 
-  <script src="https://cdn.staticfile.org/FileSaver.js/2014-11-29/FileSaver.min.js"></script>
-  <script src="https://cdn.staticfile.org/xlsx/0.18.2/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="../../../lib/index.css" />
   <script src="../../../lib/avue.js"></script>
 </head>
@@ -23,7 +21,7 @@
   <div id="app">
     <avue-crud :option="option" :data="data">
       <div slot-scope="scope" slot="inputForm">
-        <el-tag>{{scope.row}}</el-tag>
+        <el-tag>{{scope.row.$index}}</el-tag>
       </div>
     </avue-crud>
   </div>
@@ -33,11 +31,9 @@
     el: '#app',
     data() {
       return {
-        dicData: [],
         data: [{
           input: 1,
           tree: 1,
-          dic: "110000",
           dynamic: [{
             input: 1,
             select: 1,
@@ -45,64 +41,22 @@
           }, {
             input: 2,
             select: 2,
-            radio: 2,
-          }]
-        }, {
-          input: 2,
-          tree: 2,
-          dic: "120000",
-          dynamic: [{
-            input: 1,
-            select: 1,
             radio: 1,
-          }, {
-            input: 2,
-            select: 2,
-            radio: 2,
           }]
         }],
-      }
-    },
-    computed: {
-      option() {
-        let callback = (value) => {
-          if (value == 0) {
-            this.dicData = [{
-              label: 0,
-              value: 0
-            }]
-          } else {
-            this.dicData = [{
-              label: 1,
-              value: 1
-            }]
-          }
-        }
-        return {
+        option: {
           labelWidth: 110,
-          excelBtn: true,
           column: [{
-            label: '网络字典',
-            prop: 'dic',
-            type: 'select',
-            props: {
-              label: 'name',
-              value: 'code'
-            },
-            dicUrl: 'https://cli.avuejs.com/api/area/getProvince',
-          }, {
             label: '树型',
             prop: "tree",
-            type: 'select',
-            change: ({ value }) => {
-              callback(value);
-            },
+            type: 'tree',
             dicData: [{
               label: '1-1',
               value: 0,
-            }, {
-              label: "2-1",
-              value: 1
+              children: [{
+                label: "2-1",
+                value: 1
+              }]
             }]
           },
           {
@@ -111,14 +65,15 @@
             type: 'dynamic',
             span: 16,
             span: 24,
-            max: 3,
             children: {
               height: 300,
               align: 'center',
               headerAlign: 'center',
               column: [{
+                width: 200,
                 label: '输入框',
                 prop: "input",
+                formslot: true,
                 rules: [
                   {
                     required: true,
@@ -126,9 +81,69 @@
                     trigger: 'blur'
                   }
                 ]
+              }, {
+                width: 200,
+                label: '密码框',
+                prop: "password",
+                type: 'password'
+              }, {
+                width: 200,
+                label: '树型',
+                prop: "tree",
+                type: 'tree',
+                dicData: [{
+                  label: '1-1',
+                  value: 0,
+                  children: [{
+                    label: "2-1",
+                    value: 1
+                  }]
+                }]
+              }, {
+                width: 200,
+                label: '选择框',
+                prop: "select",
+                type: 'select',
+                dicData: [{
+                  label: '测试1',
+                  value: 1
+                }, {
+                  label: '测试2',
+                  value: 2
+                }]
+              }, {
+                width: 200,
+                label: '多选',
+                prop: "checkbox",
+                type: 'checkbox',
+                dicData: [{
+                  label: '测试1',
+                  value: 1
+                }, {
+                  label: '测试2',
+                  value: 2
+                }]
+              }, {
+                width: 200,
+                label: '开关',
+                prop: "switch",
+                type: 'switch',
+                dicData: [{
+                  label: '测试1',
+                  value: 1
+                }, {
+                  label: '测试2',
+                  value: 2
+                }]
+              }, {
+                width: 200,
+                label: '数字框',
+                prop: "number",
+                type: 'number'
               }]
             },
           },
+
           ]
         }
       }

@@ -1,4 +1,6 @@
-export default function treeToArray (safe, data = []) {
+'use strict';
+
+export default function treeToArray(safe, data = []) {
   let tmp = []
   data.forEach((item, index) => {
     safe.$set(item, '_index', index);
@@ -11,7 +13,7 @@ export default function treeToArray (safe, data = []) {
   return tmp
 }
 
-export function addAttrs (safe, data = [], { parent = null, preIndex = false, level = 1, expandLevel = 0, expand = false, show = true } = {}) {
+export function addAttrs(safe, data = [], { parent = null, preIndex = false, level = 1, expandLevel = 0, expand = false, show = true } = {}) {
   data.forEach((item, index) => {
     const _id = (preIndex ? `${preIndex}-${index}` : index) + ''
     safe.$set(item, '_id', _id);
