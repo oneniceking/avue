@@ -16,7 +16,7 @@ import $NProgress from 'plugin/nprogress/';
 import $ImagePreview from 'packages/core/components/image-preview/';
 import $ImageCropper from 'packages/core/components/image-cropper/';
 import $DialogForm from 'packages/core/components/dialog-form/';
-
+//测试
 let prototypes = {
   $ImagePreview,
   $ImageCropper,
